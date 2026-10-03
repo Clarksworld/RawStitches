@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { PRODUCTS, ORDERS, CUSTOMERS, formatPrice } from '../data';
 import { StatsCard, Button } from '../components/ui';
@@ -73,7 +75,7 @@ export default function AdminAnalytics() {
             <CartesianGrid strokeDasharray="3 3" stroke="#E5DDD0" />
             <XAxis dataKey="period" tick={{ fontSize: 11, fontFamily: 'Outfit' }} />
             <YAxis tick={{ fontSize: 11, fontFamily: 'Outfit' }} tickFormatter={v => `₦${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v: number) => [formatPrice(v), 'Revenue']} contentStyle={{ fontFamily: 'Outfit', fontSize: 12 }} />
+            <Tooltip formatter={(v: any) => [formatPrice(Number(v) || 0), 'Revenue']} contentStyle={{ fontFamily: 'Outfit', fontSize: 12 }} />
             <Area type="monotone" dataKey="revenue" stroke="#C4973F" strokeWidth={2} fill="url(#goldGrad)" />
           </AreaChart>
         </ResponsiveContainer>

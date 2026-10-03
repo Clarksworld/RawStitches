@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router';
+'use client';
+
+import { useState, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate, Navigate } from './router-adapter';
 import { useStore } from '../store';
-import logo from '../assets/raw-stitches-logo.png';
+const logo = '/raw-stitches-logo.png';
 
 interface NavItem {
   label: string;
@@ -86,7 +88,7 @@ function NavLink({ item, onClose }: { item: NavItem; onClose?: () => void }) {
   );
 }
 
-export default function AdminLayout() {
+export default function AdminLayout({ children }: { children?: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { state, dispatch } = useStore();
   const navigate = useNavigate();
@@ -170,7 +172,7 @@ export default function AdminLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

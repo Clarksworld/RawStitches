@@ -1,4 +1,6 @@
-import { Link } from 'react-router';
+'use client';
+
+import { Link } from '../components/router-adapter';
 import { StatsCard, Badge, Button } from '../components/ui';
 import { ORDERS, PRODUCTS, CUSTOMERS, formatPrice } from '../data';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -55,7 +57,7 @@ export default function AdminDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#E5DDD0" />
               <XAxis dataKey="day" tick={{ fontSize: 11, fontFamily: 'Outfit' }} />
               <YAxis tick={{ fontSize: 11, fontFamily: 'Outfit' }} tickFormatter={v => `₦${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatPrice(v)} contentStyle={{ fontFamily: 'Outfit', fontSize: 12 }} />
+              <Tooltip formatter={(v: any) => formatPrice(Number(v) || 0)} contentStyle={{ fontFamily: 'Outfit', fontSize: 12 }} />
               <Line type="monotone" dataKey="sales" stroke="#C4973F" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>

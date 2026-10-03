@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge, Button } from '../components/ui';
 
 const REVIEWS = [

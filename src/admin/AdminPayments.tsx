@@ -1,3 +1,5 @@
+'use client';
+
 import { ORDERS, formatPrice } from '../data';
 import { Badge, StatsCard } from '../components/ui';
 

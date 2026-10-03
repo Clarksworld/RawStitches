@@ -1,8 +1,10 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate, Navigate, Link } from 'react-router';
+import { useNavigate, Navigate, Link } from '../components/router-adapter';
 import { useStore } from '../store';
 import { Button } from '../components/ui';
-import logo from '../assets/raw-stitches-logo.png';
+const logo = '/raw-stitches-logo.png';
 
 export default function AdminLogin() {
   const { state, dispatch } = useStore();

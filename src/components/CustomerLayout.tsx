@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router';
+'use client';
+
+import { useState, useEffect, type ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from './router-adapter';
 import { useCart, useWishlist } from '../store';
-import logo from '../assets/raw-stitches-logo.png';
+const logo = '/raw-stitches-logo.png';
 
 const navLinks = [
   { label: 'Home', to: '/' },
@@ -13,7 +15,7 @@ const navLinks = [
   { label: 'Contact', to: '/contact' },
 ];
 
-export default function CustomerLayout() {
+export default function CustomerLayout({ children }: { children?: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -150,7 +152,7 @@ export default function CustomerLayout() {
 
       {/* Main content */}
       <main className={`flex-1 ${isHome ? '' : 'pt-24'}`}>
-        <Outlet />
+        {children}
       </main>
 
       {/* Footer */}

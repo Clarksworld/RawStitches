@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Tabs, Button, Input, Toggle, Badge, Modal } from '../components/ui';
 

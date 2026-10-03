@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '../components/router-adapter';
 import { PRODUCTS, formatPrice, type Product } from '../data';
 import { SearchInput, Badge, Button, ConfirmDialog, Pagination } from '../components/ui';
 

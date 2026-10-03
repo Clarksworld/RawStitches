@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from '../components/router-adapter';
 import { PRODUCTS, CATEGORIES, COLLECTIONS } from '../data';
 import { Button, Input, Select, Textarea, Toggle, Badge } from '../components/ui';
 

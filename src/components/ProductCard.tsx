@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from './router-adapter';
 import { Badge, Button } from './ui';
 import { useCart, useWishlist, useToast } from '../store';
 import { formatPrice, type Product } from '../data';

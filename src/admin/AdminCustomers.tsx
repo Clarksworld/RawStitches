@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { CUSTOMERS, ORDERS, formatPrice } from '../data';
 import { SearchInput, Badge, Tabs } from '../components/ui';

@@ -1,3 +1,5 @@
+'use client';
+
 import { useContext, useReducer, useEffect, type ReactNode } from 'react';
 import type { Product } from './data';
 import { StoreContext } from './store-context';

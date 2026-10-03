@@ -1,8 +1,10 @@
+'use client';
+
 import { useState, useEffect, useRef, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { useStore } from '../store';
 
 // ─── Button ────────────────────────────────────────────────────────────────────
-type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning';
 type BtnSize = 'sm' | 'md' | 'lg';
 
 const btnBase = 'inline-flex items-center justify-center gap-2 font-sans font-medium tracking-wide transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
@@ -12,6 +14,7 @@ const btnVariants: Record<BtnVariant, string> = {
   ghost: 'bg-transparent text-charcoal border border-border hover:border-gold hover:text-gold active:scale-[0.98]',
   danger: 'bg-error text-white hover:opacity-90 active:scale-[0.98]',
   success: 'bg-success text-white hover:opacity-90 active:scale-[0.98]',
+  warning: 'bg-warning text-white hover:opacity-90 active:scale-[0.98]',
 };
 const btnSizes: Record<BtnSize, string> = {
   sm: 'px-4 py-2 text-xs',

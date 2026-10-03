@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Button, Modal, Input, Toggle } from '../components/ui';
 
