@@ -1,35 +1,45 @@
-# figma-make-app
+# Raw Stitches
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+Next.js App Router + React 19 + Tailwind CSS v4 project.
 
-## Development Server
+## Development & Build
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
-
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+- Development: `npm run dev`
+- Build: `npm run build`
+- Start: `npm run start`
 
 ## Project Structure
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
-
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+- `src/app/layout.tsx` - Root layout with brand metadata, Google fonts, StoreProvider, and Toast notifications
+- `src/app/globals.css` - Global CSS entrypoint with Tailwind CSS v4 and brand theme tokens
+- `src/app/(store)/` - Customer storefront route group with `layout.tsx` (navigation header, announcement bar, footer)
+  - `page.tsx` - Homepage with hero, collections, new arrivals, bestsellers, and testimonials
+  - `shop/` - Catalog page with real-time filtering, search, sorting
+  - `shop/[slug]/` - Dynamic product detail page with SSG pre-rendering (`generateStaticParams`) and rich OpenGraph SEO metadata
+  - `cart/` - Shopping bag with fee calculation and state persistence
+  - `checkout/` - 3-step checkout flow (Contact, Delivery, Payment)
+  - `confirmation/[orderNumber]/` - Post-purchase order confirmation
+  - `track/[orderNumber]/` - Real-time order tracker
+  - `account/` - Customer profile, order history, addresses, and wishlist
+  - `sign-in/`, `create-account/`, `account-access/` - Customer auth flows
+  - `about/`, `contact/` - Brand story and contact page
+- `src/app/admin/` - Admin backoffice
+  - `page.tsx` - Admin login portal
+  - `(dashboard)/layout.tsx` - Authenticated admin layout with collapsible sidebar and navigation
+  - `(dashboard)/dashboard/` - Analytics charts, sales metrics, recent orders
+  - `(dashboard)/products/` - Product management with search, filter, and pagination
+  - `(dashboard)/products/new/`, `(dashboard)/products/[id]/edit/` - Add/edit product forms
+  - `(dashboard)/inventory/`, `orders/`, `customers/`, `payments/`, `discounts/`, `catalog/`, `reviews/`, `delivery/`, `analytics/`, `content/`, `settings/`
+- `src/app/api/` - Next.js Serverless API endpoints
+  - `api/health/route.ts` - API status and health check
+  - `api/products/route.ts` - Filterable products API endpoint
+- `src/views/` - Reusable view screen components
+- `src/components/` - Shared UI elements (`ui.tsx`, `ProductCard.tsx`, `AdminLayout.tsx`, `CustomerLayout.tsx`, `router-adapter.tsx`)
+- `src/store.tsx` - Global shopping cart, wishlist, and admin auth state management
 
 ## Dependencies
 
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
-
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
+- Runtime: Next.js 16+, React 19, React DOM 19
+- Styling: Tailwind CSS v4 with `@tailwindcss/postcss` and PostCSS
+- Charts: Recharts
+- TypeScript: 5.7+
