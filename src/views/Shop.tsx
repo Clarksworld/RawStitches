@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from '../components/router-adapter';
-import { PRODUCTS, CATEGORIES } from '../data';
+import { PRODUCTS, CATEGORIES, type Product } from '../data';
 import ProductCard from '../components/ProductCard';
 import { SearchInput, EmptyState, Button } from '../components/ui';
 
@@ -17,6 +17,7 @@ export default function Shop() {
   const initialCategory = searchParams.get('category') ?? '';
   const initialQ = searchParams.get('q') ?? '';
 
+  const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [search, setSearch] = useState(initialQ);
   const [sort, setSort] = useState<SortKey>('newest');
   const [filterCategory, setFilterCategory] = useState(initialCategory);
@@ -27,8 +28,19 @@ export default function Shop() {
   const [filterMaxPrice, setFilterMaxPrice] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data.products && Array.isArray(data.products)) {
+          setProductList(data.products);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   const filtered = useMemo(() => {
-    let items = [...PRODUCTS];
+    let items = [...productList];
     if (initialFilter === 'new') items = items.filter(p => p.isNewArrival);
     if (initialFilter === 'bestsellers') items = items.filter(p => p.isBestSeller);
     if (search) items = items.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase()));

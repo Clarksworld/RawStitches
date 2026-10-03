@@ -1,13 +1,10 @@
 'use client';
 
 import { Link } from '../components/router-adapter';
-import { useState } from 'react';
-import { PRODUCTS, CATEGORIES, formatPrice } from '../data';
+import { useState, useEffect } from 'react';
+import { PRODUCTS, CATEGORIES, formatPrice, type Product } from '../data';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui';
-
-const newArrivals = PRODUCTS.filter(p => p.isNewArrival);
-const bestSellers = PRODUCTS.filter(p => p.isBestSeller);
 
 const testimonials = [
   { name: 'Adaeze O.', city: 'Port Harcourt', text: 'The quality is exceptional. I wore my wrap dress to a formal event and received so many compliments. Raw Stitches truly understands Nigerian elegance.', rating: 5 },
@@ -16,8 +13,23 @@ const testimonials = [
 ];
 
 export default function Home() {
+  const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data.products && Array.isArray(data.products)) {
+          setProductList(data.products);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const newArrivals = productList.filter(p => p.isNewArrival);
+  const bestSellers = productList.filter(p => p.isBestSeller);
 
   return (
     <div className="bg-ivory">

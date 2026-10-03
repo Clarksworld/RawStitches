@@ -1,20 +1,42 @@
 'use client';
 
-import { ORDERS, formatPrice } from '../data';
+import { useState, useEffect } from 'react';
+import { ORDERS, formatPrice, type Order } from '../data';
 import { Badge, StatsCard } from '../components/ui';
 
 export default function AdminPayments() {
-  const paid = ORDERS.filter(o => o.paymentStatus === 'paid');
-  const pending = ORDERS.filter(o => o.paymentStatus === 'pending');
-  const failed = ORDERS.filter(o => o.paymentStatus === 'failed');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        setOrders(data.orders && Array.isArray(data.orders) ? data.orders : ORDERS);
+      })
+      .catch(() => setOrders(ORDERS))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const paid = orders.filter(o => o.paymentStatus === 'paid');
+  const pending = orders.filter(o => o.paymentStatus === 'pending');
+  const failed = orders.filter(o => o.paymentStatus === 'failed' || o.paymentStatus === 'refunded');
+
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-8 bg-ivory-dark w-48 rounded" />
+        <div className="grid grid-cols-4 gap-4">{Array.from({length:4}).map((_,i)=><div key={i} className="h-20 bg-ivory-dark rounded"/>)}</div>
+        <div className="h-64 bg-ivory-dark rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-charcoal">Payments</h1>
-        <div className="flex gap-2">
-          <button className="text-xs text-stone hover:text-gold font-sans border border-border px-3 py-1.5 transition-colors">Export CSV</button>
-        </div>
+        <button className="text-xs text-stone hover:text-gold font-sans border border-border px-3 py-1.5 transition-colors">Export CSV</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -25,7 +47,7 @@ export default function AdminPayments() {
       </div>
 
       <div className="bg-ivory-dark border border-border px-4 py-3 text-xs text-stone font-sans">
-        💡 This payment dashboard is designed to be populated by a payment gateway (Paystack or Flutterwave). Connect your gateway to see live transaction data.
+        💡 This payment dashboard is ready for a live gateway (Paystack or Flutterwave). Connect your gateway in Settings → Payments to see real transaction data.
       </div>
 
       <div className="bg-white border border-border overflow-x-auto">
@@ -42,7 +64,7 @@ export default function AdminPayments() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {ORDERS.map(order => (
+            {orders.map(order => (
               <tr key={order.id} className="hover:bg-ivory/40 transition-colors">
                 <td className="px-4 py-3 font-medium text-charcoal">{order.orderNumber}</td>
                 <td className="px-4 py-3">
@@ -58,6 +80,11 @@ export default function AdminPayments() {
             ))}
           </tbody>
         </table>
+        {orders.length === 0 && (
+          <div className="py-16 text-center">
+            <p className="font-serif text-lg text-stone">No payment records yet</p>
+          </div>
+        )}
       </div>
     </div>
   );

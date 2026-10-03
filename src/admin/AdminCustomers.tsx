@@ -1,21 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CUSTOMERS, ORDERS, formatPrice } from '../data';
+import type { Order } from '../data';
+import type { Customer } from '../db/schema';
 import { SearchInput, Badge, Tabs } from '../components/ui';
 
+type CustomerData = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  orders: number;
+  spent: number;
+  lastOrder?: string | null;
+  status: string;
+  createdAt?: Date | string | null;
+};
+
 export default function AdminCustomers() {
+  const [customers, setCustomers] = useState<CustomerData[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [profileTab, setProfileTab] = useState('Orders');
 
-  const filtered = CUSTOMERS.filter(c =>
+  useEffect(() => {
+    async function load() {
+      try {
+        const [custRes, ordRes] = await Promise.all([
+          fetch('/api/customers'),
+          fetch('/api/orders'),
+        ]);
+        const [custData, ordData] = await Promise.all([custRes.json(), ordRes.json()]);
+        setCustomers(custData.customers && Array.isArray(custData.customers) ? custData.customers : CUSTOMERS);
+        setOrders(ordData.orders && Array.isArray(ordData.orders) ? ordData.orders : ORDERS);
+      } catch {
+        setCustomers(CUSTOMERS);
+        setOrders(ORDERS);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const customer = selected ? CUSTOMERS.find(c => c.id === selected) : null;
-  const customerOrders = customer ? ORDERS.filter(o => o.customer.email === customer.email) : [];
-  const [profileTab, setProfileTab] = useState('Orders');
+  const customer = selected ? customers.find(c => c.id === selected) : null;
+  const customerOrders = customer ? orders.filter(o => o.customer.email === customer.email) : [];
+
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-8 bg-ivory-dark w-48 rounded" />
+        <div className="h-64 bg-ivory-dark rounded" />
+      </div>
+    );
+  }
 
   if (customer) {
     return (
@@ -73,7 +119,10 @@ export default function AdminCustomers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-2xl text-charcoal">Customers</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl text-charcoal">Customers</h1>
+        <span className="text-xs text-stone font-sans">{customers.length} total</span>
+      </div>
       <div className="bg-white border border-border p-4">
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email..." className="w-72" />
       </div>
@@ -87,7 +136,7 @@ export default function AdminCustomers() {
               <th className="px-4 py-3 text-left text-xs uppercase tracking-widest text-stone font-medium">Total Spent</th>
               <th className="px-4 py-3 text-left text-xs uppercase tracking-widest text-stone font-medium">Last Order</th>
               <th className="px-4 py-3 text-left text-xs uppercase tracking-widest text-stone font-medium">Status</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -107,13 +156,18 @@ export default function AdminCustomers() {
                 <td className="px-4 py-3 text-stone">{c.phone}</td>
                 <td className="px-4 py-3 text-charcoal">{c.orders}</td>
                 <td className="px-4 py-3 font-medium text-charcoal">{formatPrice(c.spent)}</td>
-                <td className="px-4 py-3 text-stone">{c.lastOrder}</td>
+                <td className="px-4 py-3 text-stone">{c.lastOrder ?? '—'}</td>
                 <td className="px-4 py-3"><Badge variant={c.status === 'active' ? 'success' : 'warning'}>{c.status}</Badge></td>
                 <td className="px-4 py-3 text-gold text-xs">View →</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <div className="py-16 text-center">
+            <p className="font-serif text-lg text-stone">No customers found</p>
+          </div>
+        )}
       </div>
     </div>
   );

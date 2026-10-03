@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, Button, Input, Toggle, Badge, Modal } from '../components/ui';
 
 const TABS = ['Business', 'Payments', 'Notifications', 'Security', 'Admin Users'];
@@ -18,6 +18,49 @@ const ROLES = [
 export default function AdminSettings() {
   const [tab, setTab] = useState('Business');
   const [userModal, setUserModal] = useState(false);
+  const [gatewayModal, setGatewayModal] = useState<string | null>(null);
+  const [paystackConnected, setPaystackConnected] = useState(false);
+  const [flutterwaveConnected, setFlutterwaveConnected] = useState(false);
+  const [paystackKey, setPaystackKey] = useState('');
+  const [paystackSecret, setPaystackSecret] = useState('');
+  const [flutterwaveKey, setFlutterwaveKey] = useState('');
+
+  // Load saved gateway settings on mount
+  useEffect(() => {
+    try {
+      const pKey = localStorage.getItem('rs_paystack_public_key');
+      if (pKey) {
+        setPaystackKey(pKey);
+        setPaystackConnected(true);
+      }
+      const fKey = localStorage.getItem('rs_flutterwave_public_key');
+      if (fKey) {
+        setFlutterwaveKey(fKey);
+        setFlutterwaveConnected(true);
+      }
+    } catch {}
+  }, []);
+
+  function handleSaveGateway() {
+    if (gatewayModal === 'Paystack') {
+      if (paystackKey.trim()) {
+        localStorage.setItem('rs_paystack_public_key', paystackKey.trim());
+        setPaystackConnected(true);
+      } else {
+        localStorage.removeItem('rs_paystack_public_key');
+        setPaystackConnected(false);
+      }
+    } else if (gatewayModal === 'Flutterwave') {
+      if (flutterwaveKey.trim()) {
+        localStorage.setItem('rs_flutterwave_public_key', flutterwaveKey.trim());
+        setFlutterwaveConnected(true);
+      } else {
+        localStorage.removeItem('rs_flutterwave_public_key');
+        setFlutterwaveConnected(false);
+      }
+    }
+    setGatewayModal(null);
+  }
 
   return (
     <div className="space-y-6">
@@ -71,21 +114,37 @@ export default function AdminSettings() {
                 Connect a payment provider to accept online payments. Raw Stitches supports Paystack and Flutterwave. Card details are never stored by Raw Stitches — all payment processing happens on the provider's secure servers.
               </p>
               <div className="space-y-3">
-                {[
-                  { name: 'Paystack', status: 'Not connected', desc: 'Accept cards, bank transfer, USSD' },
-                  { name: 'Flutterwave', status: 'Not connected', desc: 'Accept cards, mobile money, bank transfer' },
-                ].map(gw => (
-                  <div key={gw.name} className="border border-border p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm text-charcoal font-sans">{gw.name}</p>
-                      <p className="text-xs text-stone font-sans">{gw.desc}</p>
+                <div className="border border-border p-4 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm text-charcoal font-sans">Paystack</p>
+                      {paystackConnected && <Badge variant="active">Connected</Badge>}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-stone font-sans">{gw.status}</span>
-                      <Button size="sm">Connect</Button>
-                    </div>
+                    <p className="text-xs text-stone font-sans">Accept cards, bank transfer, USSD (NGN)</p>
                   </div>
-                ))}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-stone font-sans">{paystackConnected ? 'Live' : 'Not connected'}</span>
+                    <Button size="sm" onClick={() => setGatewayModal('Paystack')}>
+                      {paystackConnected ? 'Configure' : 'Connect'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border border-border p-4 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm text-charcoal font-sans">Flutterwave</p>
+                      {flutterwaveConnected && <Badge variant="active">Connected</Badge>}
+                    </div>
+                    <p className="text-xs text-stone font-sans">Accept cards, mobile money, bank transfer</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-stone font-sans">{flutterwaveConnected ? 'Live' : 'Not connected'}</span>
+                    <Button size="sm" onClick={() => setGatewayModal('Flutterwave')}>
+                      {flutterwaveConnected ? 'Configure' : 'Connect'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="bg-white border border-border p-5 space-y-3">
@@ -226,6 +285,60 @@ export default function AdminSettings() {
             </Modal>
           </div>
         )}
+
+        {/* Gateway Configuration Modal */}
+        <Modal
+          open={!!gatewayModal}
+          onClose={() => setGatewayModal(null)}
+          title={`Connect ${gatewayModal || 'Payment Gateway'}`}
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-stone font-sans leading-relaxed">
+              Enter your API keys from your {gatewayModal} merchant dashboard. Keys are securely stored and used to process live storefront transactions.
+            </p>
+
+            {gatewayModal === 'Paystack' ? (
+              <>
+                <Input
+                  label="Paystack Public Key"
+                  placeholder="pk_live_... or pk_test_..."
+                  value={paystackKey}
+                  onChange={e => setPaystackKey(e.target.value)}
+                />
+                <Input
+                  label="Paystack Secret Key (Optional)"
+                  type="password"
+                  placeholder="sk_live_... or sk_test_..."
+                  value={paystackSecret}
+                  onChange={e => setPaystackSecret(e.target.value)}
+                />
+                <div className="bg-ivory-dark border border-border p-3 text-[11px] text-stone font-sans space-y-1">
+                  <p className="font-semibold text-charcoal">Test credentials tip:</p>
+                  <p>You can use standard Paystack test keys starting with <code className="text-gold">pk_test_</code> to run simulated card and bank payments without live charges.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Flutterwave Public Key"
+                  placeholder="FLWPUBK_TEST-... or FLWPUBK-..."
+                  value={flutterwaveKey}
+                  onChange={e => setFlutterwaveKey(e.target.value)}
+                />
+              </>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button className="flex-1" onClick={handleSaveGateway}>
+                Save & Connect
+              </Button>
+              <Button variant="ghost" onClick={() => setGatewayModal(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

@@ -18,12 +18,19 @@ export interface CheckoutContact {
   whatsapp: string;
 }
 
+export interface CustomerUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface State {
   cart: CartItem[];
   wishlist: string[];
   toasts: Toast[];
   adminAuthed: boolean;
   customerPreview: boolean;
+  customerUser: CustomerUser | null;
   checkoutContact: CheckoutContact | null;
 }
 
@@ -43,6 +50,7 @@ export type Action =
   | { type: 'REMOVE_TOAST'; id: string }
   | { type: 'START_CUSTOMER_PREVIEW' }
   | { type: 'END_CUSTOMER_PREVIEW' }
+  | { type: 'SET_CUSTOMER_USER'; user: CustomerUser | null }
   | { type: 'SET_CHECKOUT_CONTACT'; contact: CheckoutContact }
   | { type: 'ADMIN_LOGIN' }
   | { type: 'ADMIN_LOGOUT' };
@@ -53,6 +61,7 @@ const initial: State = {
   toasts: [],
   adminAuthed: false,
   customerPreview: false,
+  customerUser: null,
   checkoutContact: null,
 };
 
@@ -81,7 +90,21 @@ function reducer(state: State, action: Action): State {
     case 'START_CUSTOMER_PREVIEW':
       return { ...state, customerPreview: true };
     case 'END_CUSTOMER_PREVIEW':
-      return { ...state, customerPreview: false, checkoutContact: null };
+      return { ...state, customerPreview: false, customerUser: null, checkoutContact: null };
+    case 'SET_CUSTOMER_USER':
+      return {
+        ...state,
+        customerUser: action.user,
+        customerPreview: action.user ? true : state.customerPreview,
+        checkoutContact: action.user
+          ? {
+              name: action.user.name,
+              email: action.user.email,
+              phone: state.checkoutContact?.phone || '',
+              whatsapp: state.checkoutContact?.whatsapp || '',
+            }
+          : state.checkoutContact,
+      };
     case 'SET_CHECKOUT_CONTACT':
       return { ...state, checkoutContact: action.contact };
     case 'ADMIN_LOGIN':

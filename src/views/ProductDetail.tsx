@@ -2,20 +2,24 @@
 
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from '../components/router-adapter';
-import { PRODUCTS, formatPrice } from '../data';
+import { PRODUCTS, formatPrice, type Product } from '../data';
 import { Button, Badge, Accordion, StarRating, Breadcrumb, Modal } from '../components/ui';
 import { useCart, useWishlist, useToast } from '../store';
 import ProductCard from '../components/ProductCard';
 
-export default function ProductDetail() {
+interface ProductDetailProps {
+  initialProduct?: Product | null;
+}
+
+export default function ProductDetail({ initialProduct }: ProductDetailProps = {}) {
   const { slug } = useParams<{ slug: string }>();
-  const product = PRODUCTS.find(p => p.slug === slug);
+  const product = initialProduct ?? (slug ? PRODUCTS.find(p => p.slug === slug) : null);
   const navigate = useNavigate();
   const toast = useToast();
   const { dispatch: cartDispatch } = useCart();
   const { ids, dispatch: wishDispatch } = useWishlist();
 
-  const [selectedColor, setSelectedColor] = useState(product?.colors[0] ?? '');
+  const [selectedColor, setSelectedColor] = useState(product?.colors?.[0] ?? '');
   const [selectedSize, setSelectedSize] = useState('');
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);

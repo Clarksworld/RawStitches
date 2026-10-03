@@ -1,0 +1,118 @@
+import {
+  pgTable,
+  text,
+  integer,
+  numeric,
+  boolean,
+  jsonb,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+// ─── Products ───────────────────────────────────────────────────────────────
+export const products = pgTable("products", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  price: integer("price").notNull(),
+  salePrice: integer("sale_price"),
+  category: text("category").notNull(),
+  collection: text("collection").notNull(),
+  images: jsonb("images").$type<string[]>().notNull().default([]),
+  colors: jsonb("colors").$type<string[]>().notNull().default([]),
+  colorHex: jsonb("color_hex").$type<Record<string, string>>().notNull().default({}),
+  sizes: jsonb("sizes").$type<string[]>().notNull().default([]),
+  stock: integer("stock").notNull().default(0),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
+  rating: numeric("rating", { precision: 3, scale: 2 }).notNull().default("0"),
+  reviewCount: integer("review_count").notNull().default(0),
+  description: text("description").notNull().default(""),
+  details: jsonb("details").$type<string[]>().notNull().default([]),
+  care: jsonb("care").$type<string[]>().notNull().default([]),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  isNewArrival: boolean("is_new_arrival").notNull().default(false),
+  isBestSeller: boolean("is_best_seller").notNull().default(false),
+  sku: text("sku").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Customers ───────────────────────────────────────────────────────────────
+export const customers = pgTable("customers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull().default(""),
+  orders: integer("orders").notNull().default(0),
+  spent: integer("spent").notNull().default(0),
+  lastOrder: text("last_order"),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  date: text("date").notNull(),
+  customer: jsonb("customer")
+    .$type<{ name: string; email: string; phone: string }>()
+    .notNull(),
+  items: jsonb("items")
+    .$type<
+      Array<{
+        productId: string;
+        name: string;
+        image: string;
+        color: string;
+        size: string;
+        qty: number;
+        price: number;
+      }>
+    >()
+    .notNull()
+    .default([]),
+  subtotal: integer("subtotal").notNull().default(0),
+  deliveryFee: integer("delivery_fee").notNull().default(0),
+  discount: integer("discount").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  paymentStatus: text("payment_status").notNull().default("pending"),
+  paymentMethod: text("payment_method").notNull().default(""),
+  paymentRef: text("payment_ref").notNull().default(""),
+  deliveryStatus: text("delivery_status").notNull().default("pending"),
+  address: jsonb("address")
+    .$type<{ line1: string; city: string; state: string; country: string }>()
+    .notNull(),
+  note: text("note").notNull().default(""),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+export const categories = pgTable("categories", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  image: text("image").notNull().default(""),
+  count: integer("count").notNull().default(0),
+  enabled: boolean("enabled").notNull().default(true),
+});
+
+// ─── Collections ─────────────────────────────────────────────────────────────
+export const collections = pgTable("collections", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  image: text("image").notNull().default(""),
+  publishDate: text("publish_date").notNull(),
+  status: text("status").notNull().default("draft"),
+});
+
+// ─── Type exports ─────────────────────────────────────────────────────────────
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type Collection = typeof collections.$inferSelect;

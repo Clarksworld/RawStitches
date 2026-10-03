@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '../components/router-adapter';
 import { ORDERS, formatPrice, type Order } from '../data';
 import { SearchInput, Badge, Button, Pagination } from '../components/ui';
@@ -8,12 +8,24 @@ import { SearchInput, Badge, Button, Pagination } from '../components/ui';
 const STATUS_FILTERS = ['All', 'Pending', 'Paid', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'];
 
 export default function AdminOrders() {
+  const [orders, setOrders] = useState<Order[]>(ORDERS);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [page, setPage] = useState(1);
   const PER_PAGE = 10;
 
-  const filtered = ORDERS.filter(o => {
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(data => {
+        if (data.orders && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const filtered = orders.filter(o => {
     const matchSearch = o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.customer.name.toLowerCase().includes(search.toLowerCase()) ||
       o.customer.email.toLowerCase().includes(search.toLowerCase());
@@ -41,7 +53,7 @@ export default function AdminOrders() {
             {s}
             {s !== 'All' && (
               <span className="ml-1.5 text-[10px] text-stone/60">
-                ({ORDERS.filter(o => o.deliveryStatus === s.toLowerCase() || o.paymentStatus === s.toLowerCase()).length})
+                ({orders.filter(o => o.deliveryStatus === s.toLowerCase() || o.paymentStatus === s.toLowerCase()).length})
               </span>
             )}
           </button>
@@ -80,7 +92,7 @@ export default function AdminOrders() {
                 <td className="px-4 py-3"><Badge variant={order.paymentStatus as any}>{order.paymentStatus}</Badge></td>
                 <td className="px-4 py-3"><Badge variant={order.deliveryStatus as any}>{order.deliveryStatus}</Badge></td>
                 <td className="px-4 py-3">
-                  <Link to={`/admin/orders/${order.id}`} className="text-gold text-xs hover:underline font-sans">View Details</Link>
+                  <Link to={`/admin/orders/${order.orderNumber}`} className="text-gold text-xs hover:underline font-sans">View Details</Link>
                 </td>
               </tr>
             ))}

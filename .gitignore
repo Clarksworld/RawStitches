@@ -11,10 +11,15 @@ node_modules
 dist
 dist-ssr
 *.local
+.env*
+!.env.example
+.neon
+.neon-node-patch.cjs
 
 # Next.js
 .next/
 out/
+drizzle/
 
 # Editor directories and files
 .vscode/*

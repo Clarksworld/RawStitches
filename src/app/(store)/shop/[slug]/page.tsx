@@ -1,4 +1,5 @@
 import ProductDetail from '@/views/ProductDetail';
+import { getProductBySlug, getProducts } from '@/db/queries';
 import { PRODUCTS } from '@/data';
 import type { Metadata } from 'next';
 
@@ -7,16 +8,24 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  return PRODUCTS.map(p => ({ slug: p.slug }));
+  try {
+    const products = await getProducts();
+    if (products && products.length > 0) {
+      return products.map((p) => ({ slug: p.slug }));
+    }
+  } catch (error) {
+    console.warn('generateStaticParams fallback:', error);
+  }
+  return PRODUCTS.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = PRODUCTS.find(p => p.slug === slug);
-  if (!product) return { title: 'Product Not Found' };
+  const product = await getProductBySlug(slug);
+  if (!product) return { title: 'Product Not Found | Raw Stitches' };
 
   return {
-    title: product.name,
+    title: `${product.name} | Raw Stitches`,
     description: product.description,
     openGraph: {
       title: `${product.name} | Raw Stitches`,
@@ -26,6 +35,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ProductDetailPage() {
-  return <ProductDetail />;
+export default async function ProductDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  return <ProductDetail initialProduct={product} />;
 }

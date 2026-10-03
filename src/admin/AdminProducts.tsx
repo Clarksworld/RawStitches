@@ -1,18 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '../components/router-adapter';
 import { PRODUCTS, formatPrice, type Product } from '../data';
 import { SearchInput, Badge, Button, ConfirmDialog, Pagination } from '../components/ui';
 
 export default function AdminProducts() {
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const PER_PAGE = 8;
 
-  const filtered = PRODUCTS.filter(p =>
+  async function loadProducts() {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (data.products && Array.isArray(data.products)) {
+        setProducts(data.products);
+      }
+    } catch (err) {
+      console.error('Failed to load admin products:', err);
+    }
+  }
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    try {
+      await fetch(`/api/products?id=${encodeURIComponent(deleteTarget.id)}`, {
+        method: 'DELETE',
+      });
+      setProducts(prev => prev.filter(p => p.id !== deleteTarget.id));
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+    } finally {
+      setDeleteTarget(null);
+    }
+  }
+
+  const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.category.toLowerCase().includes(search.toLowerCase()) ||
     p.sku.toLowerCase().includes(search.toLowerCase())
@@ -123,7 +154,7 @@ export default function AdminProducts() {
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
         title="Delete Product"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmLabel="Delete Product"

@@ -1,14 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Link, useParams } from '../components/router-adapter';
 import { Button } from '../components/ui';
 import { useStore } from '../store';
+import { formatPrice } from '../data';
 const logo = '/raw-stitches-logo.png';
 
 export default function Confirmation() {
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const now = new Date();
   const { state } = useStore();
+  const [order, setOrder] = useState<any>(null);
+
+  useEffect(() => {
+    if (!orderNumber) return;
+    fetch(`/api/orders/${orderNumber}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.order) setOrder(data.order);
+      })
+      .catch(console.error);
+  }, [orderNumber]);
 
   return (
     <div className="min-h-screen bg-ivory flex flex-col">
@@ -44,8 +57,20 @@ export default function Confirmation() {
               </div>
               <div className="flex justify-between border-b border-border pb-3">
                 <span className="text-stone">Payment</span>
-                <span className="text-success">Confirmed</span>
+                <span className="text-success">{order?.paymentStatus === 'paid' ? 'Confirmed' : 'Pending'}</span>
               </div>
+              {order?.total && (
+                <div className="flex justify-between border-b border-border pb-3">
+                  <span className="text-stone">Total Amount</span>
+                  <span className="font-semibold text-charcoal">{formatPrice(order.total)}</span>
+                </div>
+              )}
+              {order?.customer?.name && (
+                <div className="flex justify-between border-b border-border pb-3">
+                  <span className="text-stone">Recipient</span>
+                  <span className="text-charcoal">{order.customer.name}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-stone">Estimated Delivery</span>
                 <span className="text-charcoal">2–5 business days</span>

@@ -70,13 +70,112 @@ export default function Checkout() {
     setStep(s => s + 1);
   }
 
+  function loadPaystackScript(): Promise<boolean> {
+    return new Promise(resolve => {
+      if (typeof window === 'undefined') return resolve(false);
+      if ((window as any).PaystackPop) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  async function completeOrder(paymentRef: string, status: 'paid' | 'pending') {
+    const orderNum = `RS-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+    try {
+      const orderPayload = {
+        orderNumber: orderNum,
+        customer: {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+        },
+        items: items.map(item => ({
+          productId: item.product.id,
+          name: item.product.name,
+          image: item.product.images[0] || '',
+          color: item.color,
+          size: item.size,
+          qty: item.qty,
+          price: item.product.salePrice ?? item.product.price,
+        })),
+        subtotal: total,
+        deliveryFee: delivery,
+        discount: 0,
+        total: grandTotal,
+        paymentStatus: status,
+        paymentMethod: form.payment === 'card' ? 'Card' : form.payment === 'bank' ? 'Bank Transfer' : 'USSD',
+        paymentRef,
+        deliveryStatus: 'pending',
+        address: {
+          line1: form.address,
+          city: form.city,
+          state: form.state,
+          country: form.country,
+        },
+        note: form.note || (form.whatsapp ? `WhatsApp: ${form.whatsapp}` : ''),
+      };
+
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+    } catch (err) {
+      console.error('Failed to submit order to API:', err);
+    } finally {
+      dispatch({ type: 'SET_CHECKOUT_CONTACT', contact: { name: form.name, email: form.email, phone: form.phone, whatsapp: form.whatsapp } });
+      cartDispatch({ type: 'CLEAR_CART' });
+      setProcessing(false);
+      navigate(`/confirmation/${orderNum}`);
+    }
+  }
+
   async function placeOrder() {
     setProcessing(true);
-    await new Promise(r => setTimeout(r, 2000));
-    const orderNum = `RS-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-    dispatch({ type: 'SET_CHECKOUT_CONTACT', contact: { name: form.name, email: form.email, phone: form.phone, whatsapp: form.whatsapp } });
-    cartDispatch({ type: 'CLEAR_CART' });
-    navigate(`/confirmation/${orderNum}`);
+
+    const savedKey = typeof window !== 'undefined' ? localStorage.getItem('rs_paystack_public_key') : null;
+    const paystackKey = savedKey || process.env.NEXT_PUBLIC_PAYSTACK_KEY;
+
+    if (form.payment === 'card' && paystackKey) {
+      const loaded = await loadPaystackScript();
+      if (loaded && (window as any).PaystackPop) {
+        const handler = (window as any).PaystackPop.setup({
+          key: paystackKey,
+          email: form.email,
+          amount: grandTotal * 100, // amount in kobo
+          currency: 'NGN',
+          ref: `PSK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          metadata: {
+            custom_fields: [
+              { display_name: 'Customer Name', variable_name: 'customer_name', value: form.name },
+              { display_name: 'Phone Number', variable_name: 'phone_number', value: form.phone },
+            ],
+          },
+          callback: function (response: { reference: string }) {
+            completeOrder(response.reference, 'paid');
+          },
+          onClose: function () {
+            setProcessing(false);
+          },
+        });
+        handler.openIframe();
+        return;
+      }
+    }
+
+    // Default card or bank/ussd fallback
+    const ref = form.payment === 'card'
+      ? `PSK-TXN-${Date.now().toString().slice(-6)}A`
+      : form.payment === 'bank'
+      ? `BNK-TXN-${Date.now().toString().slice(-6)}B`
+      : `USD-TXN-${Date.now().toString().slice(-6)}C`;
+
+    await completeOrder(ref, form.payment === 'card' ? 'paid' : 'pending');
   }
 
   const Err = ({ field }: { field: string }) =>
