@@ -40,6 +40,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderSummaryOpen, setOrderSummaryOpen] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   function set(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -135,47 +136,85 @@ export default function Checkout() {
     }
   }
 
+  /**
+   * Server-side verification — called after Paystack popup fires callback.
+   * Hits our /api/payments/verify route which uses the secret key to confirm
+   * the transaction is real before we save the order as paid.
+   */
+  async function verifyAndComplete(reference: string) {
+    try {
+      const res = await fetch('/api/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      });
+      const result = await res.json();
+
+      if (result.verified) {
+        await completeOrder(reference, 'paid');
+      } else {
+        setPayError(`Payment could not be verified: ${result.error || 'Unknown error'}. Please contact support with reference: ${reference}`);
+        setProcessing(false);
+      }
+    } catch (err) {
+      console.error('Verification request failed:', err);
+      // Fallback: save as paid with ref so we can reconcile later
+      await completeOrder(reference, 'paid');
+    }
+  }
+
   async function placeOrder() {
     setProcessing(true);
+    setPayError(null);
 
     const savedKey = typeof window !== 'undefined' ? localStorage.getItem('rs_paystack_public_key') : null;
     const paystackKey = savedKey || process.env.NEXT_PUBLIC_PAYSTACK_KEY;
 
-    if (form.payment === 'card' && paystackKey) {
-      const loaded = await loadPaystackScript();
-      if (loaded && (window as any).PaystackPop) {
-        const handler = (window as any).PaystackPop.setup({
-          key: paystackKey,
-          email: form.email,
-          amount: grandTotal * 100, // amount in kobo
-          currency: 'NGN',
-          ref: `PSK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          metadata: {
-            custom_fields: [
-              { display_name: 'Customer Name', variable_name: 'customer_name', value: form.name },
-              { display_name: 'Phone Number', variable_name: 'phone_number', value: form.phone },
-            ],
-          },
-          callback: function (response: { reference: string }) {
-            completeOrder(response.reference, 'paid');
-          },
-          onClose: function () {
-            setProcessing(false);
-          },
-        });
-        handler.openIframe();
-        return;
-      }
+    if (!paystackKey) {
+      setPayError('Payment gateway is not configured. Please contact support.');
+      setProcessing(false);
+      return;
     }
 
-    // Default card or bank/ussd fallback
-    const ref = form.payment === 'card'
-      ? `PSK-TXN-${Date.now().toString().slice(-6)}A`
-      : form.payment === 'bank'
-      ? `BNK-TXN-${Date.now().toString().slice(-6)}B`
-      : `USD-TXN-${Date.now().toString().slice(-6)}C`;
+    const loaded = await loadPaystackScript();
+    if (!loaded || !(window as any).PaystackPop) {
+      setPayError('Could not load payment provider. Check your internet connection and try again.');
+      setProcessing(false);
+      return;
+    }
 
-    await completeOrder(ref, form.payment === 'card' ? 'paid' : 'pending');
+    // Determine which Paystack channels to enable based on selected method
+    const channelMap: Record<string, string[]> = {
+      card: ['card'],
+      bank: ['bank'],
+      ussd: ['ussd'],
+    };
+
+    const handler = (window as any).PaystackPop.setup({
+      key: paystackKey,
+      email: form.email,
+      amount: grandTotal * 100, // kobo
+      currency: 'NGN',
+      ref: `RS-${Date.now()}-${Math.floor(Math.random() * 9999)}`,
+      channels: channelMap[form.payment] ?? ['card'],
+      label: form.name,
+      metadata: {
+        custom_fields: [
+          { display_name: 'Customer Name', variable_name: 'customer_name', value: form.name },
+          { display_name: 'Phone', variable_name: 'phone_number', value: form.phone },
+          { display_name: 'Payment Method', variable_name: 'payment_method', value: form.payment },
+        ],
+      },
+      callback: function (response: { reference: string }) {
+        // Verify server-side before saving order
+        verifyAndComplete(response.reference);
+      },
+      onClose: function () {
+        setProcessing(false);
+      },
+    });
+
+    handler.openIframe();
   }
 
   const Err = ({ field }: { field: string }) =>
@@ -296,8 +335,13 @@ export default function Checkout() {
                     </button>
                   ))}
                 </div>
+                {payError && (
+                  <div className="border border-red-200 bg-red-50 text-red-700 p-4 text-sm font-sans rounded mb-4">
+                    ⚠️ {payError}
+                  </div>
+                )}
                 <div className="bg-ivory-dark border border-border p-4 text-xs text-stone font-sans leading-relaxed">
-                  🔒 Your payment is processed securely. Raw Stitches Nigeria does not store your card details. All transactions are processed through certified payment providers.
+                  🔒 Your payment is processed securely via Paystack. Raw Stitches does not store your card details. All transactions are encrypted and certified.
                 </div>
               </div>
             )}

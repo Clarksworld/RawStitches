@@ -31,3 +31,4 @@ drizzle/
 *.njsproj
 *.sln
 *.sw?
+.env.vercel
