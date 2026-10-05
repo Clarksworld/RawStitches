@@ -6,16 +6,17 @@ import { PRODUCTS, CATEGORIES, formatPrice, type Product } from '../data';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui';
 
-const testimonials = [
-  { name: 'Adaeze O.', city: 'Port Harcourt', text: 'The quality is exceptional. I wore my wrap dress to a formal event and received so many compliments. Raw Stitches truly understands Nigerian elegance.', rating: 5 },
-  { name: 'Chisom E.', city: 'Abuja', text: "I am obsessed with my two-piece set. The fit is perfect and the fabric is luxurious. This brand is doing something special for Nigerian women's fashion.", rating: 5 },
-  { name: 'Ngozi A.', city: 'Lagos', text: 'Finally, a Nigerian brand that combines craftsmanship with contemporary style. The maxi dress is everything I imagined and more.', rating: 5 },
+const FALLBACK_TESTIMONIALS = [
+  { customerName: 'Adaeze O.', city: 'Port Harcourt', body: 'The quality is exceptional. I wore my wrap dress to a formal event and received so many compliments. Raw Stitches truly understands Nigerian elegance.', rating: 5 },
+  { customerName: 'Chisom E.', city: 'Abuja', body: "I am obsessed with my two-piece set. The fit is perfect and the fabric is luxurious. This brand is doing something special for Nigerian women's fashion.", rating: 5 },
+  { customerName: 'Ngozi A.', city: 'Lagos', body: 'Finally, a Nigerian brand that combines craftsmanship with contemporary style. The maxi dress is everything I imagined and more.', rating: 5 },
 ];
 
 export default function Home() {
   const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
 
   useEffect(() => {
     fetch('/api/products')
@@ -26,6 +27,15 @@ export default function Home() {
         }
       })
       .catch(console.error);
+
+    fetch('/api/reviews?featured=true&status=approved')
+      .then(res => res.json())
+      .then(data => {
+        if (data.reviews && data.reviews.length > 0) {
+          setFeaturedReviews(data.reviews.slice(0, 3));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const newArrivals = productList.filter(p => p.isNewArrival);
@@ -226,19 +236,19 @@ export default function Home() {
             <h2 className="font-serif text-3xl lg:text-4xl text-charcoal">What She Says</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6 lg:gap-10">
-            {testimonials.map((t, i) => (
+            {(featuredReviews.length > 0 ? featuredReviews : FALLBACK_TESTIMONIALS).map((t: any, i) => (
               <div key={i} className="bg-white p-8 border border-border">
                 <div className="flex mb-4">
-                  {Array.from({ length: t.rating }).map((_, j) => (
+                  {Array.from({ length: t.rating }).map((_: any, j: number) => (
                     <span key={j} className="text-gold text-sm">★</span>
                   ))}
                 </div>
-                <p className="font-serif text-lg text-charcoal italic leading-relaxed mb-6">"{t.text}"</p>
+                <p className="font-serif text-lg text-charcoal italic leading-relaxed mb-6">"{t.body}"</p>
                 <div>
-                  <p className="text-sm font-medium text-charcoal font-sans">{t.name}</p>
-                  <p className="text-xs text-stone font-sans">{t.city}</p>
+                  <p className="text-sm font-medium text-charcoal font-sans">{t.customerName}</p>
+                  {t.city && <p className="text-xs text-stone font-sans">{t.city}</p>}
+                  {t.productName && <p className="text-xs text-stone/60 font-sans mt-0.5">on {t.productName}</p>}
                 </div>
-                <p className="text-[10px] text-stone/50 mt-3 font-sans italic">Placeholder — replace with real customer review</p>
               </div>
             ))}
           </div>

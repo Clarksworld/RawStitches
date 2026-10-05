@@ -107,6 +107,22 @@ export const collections = pgTable("collections", {
   status: text("status").notNull().default("draft"),
 });
 
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  productId: text("product_id").notNull(),
+  productName: text("product_name").notNull().default(""),
+  productSlug: text("product_slug").notNull().default(""),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull().default(""),
+  rating: integer("rating").notNull(),
+  body: text("body").notNull(),
+  // status: pending | approved | rejected
+  status: text("status").notNull().default("pending"),
+  featured: boolean("featured").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ─── Type exports ─────────────────────────────────────────────────────────────
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
@@ -116,3 +132,5 @@ export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type Collection = typeof collections.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;
