@@ -2,6 +2,7 @@
 
 import { Link } from '../components/router-adapter';
 import { Button } from '../components/ui';
+import StudioMap from '../components/StudioMap';
 
 export default function About() {
   return (
@@ -127,8 +128,8 @@ export default function About() {
                 <Link to="/contact"><Button variant="ghost" className="border-white/20 text-ivory hover:border-gold hover:text-gold">Get in Touch</Button></Link>
               </div>
             </div>
-            <div className="bg-charcoal h-60 lg:h-72 flex items-center justify-center">
-              <p className="text-stone/40 text-sm font-sans">Map placeholder</p>
+            <div>
+              <StudioMap heightClass="h-64 lg:h-72" />
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { Link } from '../components/router-adapter';
 import { Button } from '../components/ui';
+import StudioMap from '../components/StudioMap';
 
 export default function Returns() {
   return (
@@ -79,6 +80,15 @@ export default function Returns() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Drop-off / Return Location Map */}
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-serif text-xl text-charcoal">Atelier Return & Drop-off Location</h3>
+            <p className="text-xs text-stone font-sans mt-0.5">Bring returns directly to our studio or dispatch via courier.</p>
+          </div>
+          <StudioMap heightClass="h-56 sm:h-64" />
         </div>
 
         {/* Help Banner */}

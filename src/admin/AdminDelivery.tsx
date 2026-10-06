@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Modal, Input, Toggle } from '../components/ui';
+import StudioMap from '../components/StudioMap';
 
 const DELIVERY_ZONES = [
   { id: 'z1', name: 'Uyo & Environs', fee: 1500, freeThreshold: 50000, time: '1–2 business days', active: true },
@@ -88,6 +89,7 @@ export default function AdminDelivery() {
               </div>
             </div>
           ))}
+          <StudioMap heightClass="h-44 sm:h-52" />
         </div>
       </div>
 

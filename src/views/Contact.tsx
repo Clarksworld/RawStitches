@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '../components/ui';
+import StudioMap from '../components/StudioMap';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
@@ -89,13 +90,8 @@ export default function Contact() {
               </a>
             </div>
 
-            {/* Map placeholder */}
-            <div className="mt-8 bg-ivory-dark border border-border h-52 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-stone/40 text-sm font-sans">Map Placeholder</p>
-                <p className="text-stone/30 text-xs font-sans mt-1">No. 62 Enwe Street, Uyo</p>
-              </div>
-            </div>
+            {/* Studio Map */}
+            <StudioMap className="mt-8" heightClass="h-64 sm:h-72" />
           </div>
 
           {/* Form */}

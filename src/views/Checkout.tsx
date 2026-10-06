@@ -5,6 +5,7 @@ import { Link, useNavigate } from '../components/router-adapter';
 import { useCart, useStore } from '../store';
 import { formatPrice } from '../data';
 import { Button, Input, Select } from '../components/ui';
+import StudioMap from '../components/StudioMap';
 const logo = '/raw-stitches-logo.png';
 
 const STEPS = ['Information', 'Delivery', 'Payment'];
@@ -361,6 +362,23 @@ export default function Checkout() {
                     <div className="sm:col-span-2">
                       <Input label="Delivery Note (optional)" value={form.note} onChange={e => set('note', e.target.value)} placeholder="Any special instructions..." />
                     </div>
+                  </div>
+                )}
+
+                {form.deliveryType === 'pickup' && (
+                  <div className="space-y-4 pt-2">
+                    <div className="bg-white border border-border p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gold font-bold">📍</span>
+                        <p className="font-serif text-base text-charcoal">Raw Stitches Studio & Atelier Pickup</p>
+                      </div>
+                      <p className="text-xs text-stone font-sans leading-relaxed">
+                        No. 62 Enwe Street, Uyo, Akwa Ibom State, Nigeria.<br />
+                        Opening hours: Monday – Saturday, 9:00 AM – 6:00 PM.
+                      </p>
+                      <p className="text-[11px] text-success font-sans font-medium">✓ Delivery is Free for Store Pickup</p>
+                    </div>
+                    <StudioMap heightClass="h-48 sm:h-56" />
                   </div>
                 )}
               </div>
