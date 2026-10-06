@@ -17,8 +17,23 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
+  const [hero, setHero] = useState({
+    eyebrow: 'Raw Stitches Nigeria Enterprise',
+    headline: 'Made for the Woman\nWho Stands Out',
+    sub: "Unique, elegant and beautifully crafted women's clothing made in Nigeria.",
+    image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1800&h=1200&fit=crop&auto=format&q=80',
+    primaryCta: 'Shop the Collection',
+    primaryLink: '/shop',
+    secondaryCta: 'Explore New Arrivals',
+    secondaryLink: '/shop?filter=new',
+  });
 
   useEffect(() => {
+    try {
+      const savedHero = localStorage.getItem('rs_hero_content');
+      if (savedHero) setHero(JSON.parse(savedHero));
+    } catch {}
+
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
@@ -47,7 +62,7 @@ export default function Home() {
       <section className="relative h-screen min-h-[600px] flex items-end overflow-hidden">
         <div className="absolute inset-0 bg-charcoal">
           <img
-            src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1800&h=1200&fit=crop&auto=format&q=80"
+            src={hero.image}
             alt="Raw Stitches editorial fashion"
             className="w-full h-full object-cover opacity-75"
           />
@@ -55,20 +70,22 @@ export default function Home() {
         </div>
         <div className="relative z-10 max-w-screen-xl mx-auto px-6 lg:px-12 pb-20 lg:pb-32 w-full">
           <div className="max-w-2xl">
-            <p className="text-gold text-2xl font-bold uppercase tracking-[0.25em] mb-5 font-sans">Raw Stitches Nigeria Enterprise</p>
-            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-ivory leading-tight mb-6">
-              Made for the Woman<br />Who Stands Out
+            <p className="text-gold text-2xl font-bold uppercase tracking-[0.25em] mb-5 font-sans">
+              {hero.eyebrow}
+            </p>
+            <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-ivory leading-tight mb-6 whitespace-pre-line">
+              {hero.headline}
             </h1>
             <p className="text-ivory/70 text-base lg:text-lg max-w-md leading-relaxed mb-8 font-sans">
-              Unique, elegant and beautifully crafted women's clothing made in Nigeria.
+              {hero.sub}
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" onClick={() => window.location.href = '/shop'}>
-                Shop the Collection
+              <Button size="lg" onClick={() => window.location.href = hero.primaryLink || '/shop'}>
+                {hero.primaryCta}
               </Button>
-              <Link to="/shop?filter=new">
+              <Link to={hero.secondaryLink || '/shop?filter=new'}>
                 <Button variant="ghost" size="lg" className="border-ivory/40 text-ivory hover:border-gold hover:text-gold">
-                  Explore New Arrivals
+                  {hero.secondaryCta}
                 </Button>
               </Link>
             </div>

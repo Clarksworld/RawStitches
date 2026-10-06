@@ -20,11 +20,23 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [announcement, setAnnouncement] = useState({
+    enabled: true,
+    text: 'Free delivery on orders above ₦50,000 · Made in Nigeria',
+    link: '/shop',
+  });
   const { count } = useCart();
   const { ids } = useWishlist();
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rs_announcement');
+      if (saved) setAnnouncement(JSON.parse(saved));
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -50,12 +62,20 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
   return (
     <div className="min-h-screen bg-ivory flex flex-col">
       {/* Top announcement */}
-      <div className="bg-black text-ivory text-center py-2 text-xs tracking-widest font-sans">
-        Free delivery on orders above ₦50,000 · Made in Nigeria
-      </div>
+      {announcement.enabled && (
+        <div className="bg-black text-ivory text-center py-2 text-xs tracking-widest font-sans px-4">
+          {announcement.link ? (
+            <Link to={announcement.link} className="hover:text-gold transition-colors">
+              {announcement.text}
+            </Link>
+          ) : (
+            announcement.text
+          )}
+        </div>
+      )}
 
       {/* Nav */}
-      <header className={`fixed top-8 left-0 right-0 z-40 transition-all duration-300 ${navBg}`}>
+      <header className={`fixed ${announcement.enabled ? 'top-8' : 'top-0'} left-0 right-0 z-40 transition-all duration-300 ${navBg}`}>
         <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between gap-6">
           {/* Logo */}
           <Link to="/" className="shrink-0">
