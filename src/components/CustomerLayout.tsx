@@ -191,16 +191,37 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
             <div>
               <h4 className="text-xs uppercase tracking-widest text-gold mb-4 font-sans font-medium">Shop</h4>
               <ul className="space-y-2.5">
-                {['New Arrivals', 'Best Sellers', 'Dresses', 'Tops', 'Two-Piece Sets', 'Skirts'].map(l => (
-                  <li key={l}><Link to="/shop" className="text-sm text-ivory/60 hover:text-ivory transition-colors font-sans">{l}</Link></li>
+                {[
+                  { label: 'New Arrivals', href: '/shop?collection=new-arrivals' },
+                  { label: 'Best Sellers', href: '/shop?collection=best-sellers' },
+                  { label: 'Dresses', href: '/shop?category=dresses' },
+                  { label: 'Tops', href: '/shop?category=tops' },
+                  { label: 'Two-Piece Sets', href: '/shop?category=two-piece-sets' },
+                  { label: 'Skirts', href: '/shop?category=skirts' },
+                ].map(item => (
+                  <li key={item.label}>
+                    <Link to={item.href} className="text-sm text-ivory/60 hover:text-ivory transition-colors font-sans">
+                      {item.label}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
             <div>
               <h4 className="text-xs uppercase tracking-widest text-gold mb-4 font-sans font-medium">Help</h4>
               <ul className="space-y-2.5">
-                {['About Us', 'Contact', 'Track Order', 'Size Guide', 'Returns'].map(l => (
-                  <li key={l}><Link to="/contact" className="text-sm text-ivory/60 hover:text-ivory transition-colors font-sans">{l}</Link></li>
+                {[
+                  { label: 'About Us', href: '/about' },
+                  { label: 'Contact', href: '/contact' },
+                  { label: 'Track Order', href: '/track' },
+                  { label: 'Size Guide', href: '/size-guide' },
+                  { label: 'Returns & Exchanges', href: '/returns' },
+                ].map(item => (
+                  <li key={item.label}>
+                    <Link to={item.href} className="text-sm text-ivory/60 hover:text-gold transition-colors font-sans">
+                      {item.label}
+                    </Link>
+                  </li>
                 ))}
               </ul>
               <div className="mt-8">

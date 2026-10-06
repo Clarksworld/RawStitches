@@ -191,7 +191,7 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1551698618-1dbd93a4f6a6?w=800&h=1000&fit=crop&auto=format&q=80"
+                src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=1000&fit=crop&auto=format&q=80"
                 alt="Raw Stitches craftsmanship"
                 className="w-full aspect-[4/5] object-cover"
               />

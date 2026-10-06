@@ -6,6 +6,7 @@ import { PRODUCTS, formatPrice, type Product } from '../data';
 import { Button, Badge, Accordion, StarRating, Breadcrumb, Modal } from '../components/ui';
 import { useCart, useWishlist, useToast } from '../store';
 import ProductCard from '../components/ProductCard';
+import { SIZE_CHART } from './SizeGuide';
 
 interface ProductDetailProps {
   initialProduct?: Product | null;
@@ -33,6 +34,7 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps = {
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [sizeError, setSizeError] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
@@ -177,7 +179,13 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps = {
                 <p className={`text-xs uppercase tracking-widest font-medium font-sans ${sizeError ? 'text-error' : 'text-charcoal'}`}>
                   {sizeError ? 'Please select a size' : 'Size'}
                 </p>
-                <button className="text-xs text-stone hover:text-gold transition-colors font-sans underline underline-offset-2">Size Guide</button>
+                <button
+                  type="button"
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="text-xs text-stone hover:text-gold transition-colors font-sans underline underline-offset-2"
+                >
+                  Size Guide
+                </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map(size => (
@@ -456,6 +464,55 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps = {
           </div>
         </div>
       </div>
+
+      {/* Size Guide Modal */}
+      <Modal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} title="Size Guide & Body Measurements" size="lg">
+        <div className="space-y-6">
+          <p className="text-xs text-stone font-sans leading-relaxed">
+            All measurements in inches and cm refer to natural body dimensions. Raw Stitches pieces are cut to provide an effortless, flattering fit.
+          </p>
+
+          <div className="overflow-x-auto border border-border">
+            <table className="w-full text-xs font-sans min-w-[550px]">
+              <thead>
+                <tr className="bg-ivory border-b border-border text-left">
+                  <th className="p-3 font-bold text-charcoal">Size</th>
+                  <th className="p-3 text-stone">UK</th>
+                  <th className="p-3 text-stone">US</th>
+                  <th className="p-3 text-charcoal font-semibold">Bust</th>
+                  <th className="p-3 text-charcoal font-semibold">Waist</th>
+                  <th className="p-3 text-charcoal font-semibold">Hips</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {SIZE_CHART.map(row => (
+                  <tr key={row.size} className="hover:bg-ivory/50">
+                    <td className="p-3 font-bold font-mono text-gold text-sm">{row.size}</td>
+                    <td className="p-3 text-stone font-mono">{row.uk}</td>
+                    <td className="p-3 text-stone font-mono">{row.us}</td>
+                    <td className="p-3 text-charcoal font-medium">{row.bustIn}″ ({row.bustCm} cm)</td>
+                    <td className="p-3 text-charcoal font-medium">{row.waistIn}″ ({row.waistCm} cm)</td>
+                    <td className="p-3 text-charcoal font-medium">{row.hipsIn}″ ({row.hipsCm} cm)</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <Link
+              to="/size-guide"
+              className="text-xs text-gold hover:underline font-sans font-medium"
+              onClick={() => setSizeGuideOpen(false)}
+            >
+              View Full Size Guide & Measuring Tips →
+            </Link>
+            <Button size="sm" variant="ghost" onClick={() => setSizeGuideOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -35,8 +35,8 @@ export default function About() {
           </div>
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1551698618-1dbd93a4f6a6?w=800&h=900&fit=crop&auto=format&q=80"
-              alt="Raw Stitches fabric"
+              src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=1000&fit=crop&auto=format&q=80"
+              alt="Raw Stitches tailored fashion"
               className="w-full aspect-[4/5] object-cover"
             />
             <div className="absolute -bottom-5 -left-5 bg-gold p-5 hidden lg:block">
