@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { PRODUCTS, ORDERS, CUSTOMERS, formatPrice } from '../data';
 import { StatsCard, Button } from '../components/ui';
+import { downloadCSV } from '../lib/csv';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -31,6 +32,14 @@ export default function AdminAnalytics() {
   const totalOrders = weeklyData.reduce((s, d) => s + d.orders, 0);
   const avgOrderValue = Math.round(totalRevenue / totalOrders);
 
+  function handleExportCSV() {
+    downloadCSV(
+      `analytics-${period.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}`,
+      ['Day', 'Revenue (NGN)', 'Orders Count', 'Unique Customers'],
+      weeklyData.map(d => [d.period, d.revenue, d.orders, d.customers])
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -47,7 +56,7 @@ export default function AdminAnalytics() {
               </button>
             ))}
           </div>
-          <Button variant="ghost" size="sm">Export CSV</Button>
+          <Button variant="ghost" size="sm" onClick={handleExportCSV}>Export CSV</Button>
         </div>
       </div>
 

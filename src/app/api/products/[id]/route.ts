@@ -123,3 +123,22 @@ export async function PATCH(
     );
   }
 }
+
+// DELETE /api/products/[id] — delete single product
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const db = getDb();
+    await db.delete(productsTable).where(eq(productsTable.id, id));
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Failed to delete product from DB:", error);
+    return NextResponse.json(
+      { success: false, error: error?.message || "Failed to delete product" },
+      { status: 500 }
+    );
+  }
+}

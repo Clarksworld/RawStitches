@@ -3,10 +3,28 @@
 import { useState, useEffect } from 'react';
 import { ORDERS, formatPrice, type Order } from '../data';
 import { Badge, StatsCard } from '../components/ui';
+import { downloadCSV } from '../lib/csv';
 
 export default function AdminPayments() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  function handleExportCSV() {
+    downloadCSV(
+      `payments-${new Date().toISOString().slice(0, 10)}`,
+      ['Order Number', 'Date', 'Customer Name', 'Customer Email', 'Amount (NGN)', 'Payment Method', 'Payment Reference', 'Status'],
+      orders.map(o => [
+        o.orderNumber,
+        o.date || ((o as any).createdAt ? new Date((o as any).createdAt).toLocaleDateString() : ''),
+        o.customer.name,
+        o.customer.email,
+        o.total,
+        o.paymentMethod || 'Paystack',
+        o.paymentRef || '',
+        o.paymentStatus
+      ])
+    );
+  }
 
   useEffect(() => {
     fetch('/api/orders')
@@ -36,7 +54,12 @@ export default function AdminPayments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-charcoal">Payments</h1>
-        <button className="text-xs text-stone hover:text-gold font-sans border border-border px-3 py-1.5 transition-colors">Export CSV</button>
+        <button
+          onClick={handleExportCSV}
+          className="text-xs text-stone hover:text-gold font-sans border border-border px-3 py-1.5 transition-colors"
+        >
+          Export CSV
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

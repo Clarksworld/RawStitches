@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PRODUCTS, formatPrice, type Product } from '../data';
 import { SearchInput, Badge, Button, Modal, Input, Select, StatsCard } from '../components/ui';
+import { downloadCSV } from '../lib/csv';
 
 export default function AdminInventory() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -71,6 +72,23 @@ export default function AdminInventory() {
   const lowStock = products.filter(p => p.stock > 0 && p.stock <= p.lowStockThreshold);
   const outOfStock = products.filter(p => p.stock === 0);
 
+  function handleExportCSV() {
+    downloadCSV(
+      `inventory-${new Date().toISOString().slice(0, 10)}`,
+      ['ID', 'Product Name', 'SKU', 'Category', 'Stock Level', 'Price (NGN)', 'Inventory Value (NGN)', 'Status'],
+      allFiltered.map(p => [
+        p.id,
+        p.name,
+        p.sku || '',
+        p.category,
+        p.stock,
+        p.price,
+        p.price * p.stock,
+        p.stock === 0 ? 'Out of Stock' : p.stock <= (p.lowStockThreshold || 5) ? 'Low Stock' : 'In Stock'
+      ])
+    );
+  }
+
   const stockBadge = (p: Product) => {
     if (p.stock === 0) return <Badge variant="error">Out of Stock</Badge>;
     if (p.stock <= p.lowStockThreshold) return <Badge variant="warning">Low Stock</Badge>;
@@ -91,7 +109,7 @@ export default function AdminInventory() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-charcoal">Inventory</h1>
-        <Button variant="ghost" size="sm">Export CSV</Button>
+        <Button variant="ghost" size="sm" onClick={handleExportCSV}>Export CSV</Button>
       </div>
 
       {/* Stats */}

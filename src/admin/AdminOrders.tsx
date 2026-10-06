@@ -5,6 +5,8 @@ import { Link } from '../components/router-adapter';
 import { ORDERS, formatPrice, type Order } from '../data';
 import { SearchInput, Badge, Button, Pagination } from '../components/ui';
 
+import { downloadCSV } from '../lib/csv';
+
 const STATUS_FILTERS = ['All', 'Pending', 'Paid', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'];
 
 export default function AdminOrders() {
@@ -13,6 +15,24 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [page, setPage] = useState(1);
   const PER_PAGE = 10;
+
+  function handleExportCSV() {
+    downloadCSV(
+      `orders-${new Date().toISOString().slice(0, 10)}`,
+      ['Order Number', 'Date', 'Customer Name', 'Customer Email', 'Items Count', 'Total (NGN)', 'Payment Status', 'Payment Method', 'Delivery Status'],
+      filtered.map(o => [
+        o.orderNumber,
+        o.date || ((o as any).createdAt ? new Date((o as any).createdAt).toLocaleDateString() : ''),
+        o.customer.name,
+        o.customer.email,
+        o.items.reduce((s, i) => s + i.qty, 0),
+        o.total,
+        o.paymentStatus,
+        o.paymentMethod,
+        o.deliveryStatus,
+      ])
+    );
+  }
 
   useEffect(() => {
     fetch('/api/orders')
@@ -39,7 +59,7 @@ export default function AdminOrders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl text-charcoal">Orders</h1>
-        <Button variant="ghost" size="sm">Export CSV</Button>
+        <Button variant="ghost" size="sm" onClick={handleExportCSV}>Export CSV</Button>
       </div>
 
       {/* Status tabs */}

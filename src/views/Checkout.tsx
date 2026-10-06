@@ -28,9 +28,6 @@ export default function Checkout() {
   const [step, setStep] = useState(0);
   const [processing, setProcessing] = useState(false);
 
-  const delivery = total >= 50000 ? 0 : 3500;
-  const grandTotal = total + delivery;
-
   const [form, setForm] = useState({
     name: state.checkoutContact?.name ?? '', email: state.checkoutContact?.email ?? '',
     phone: state.checkoutContact?.phone ?? '', whatsapp: state.checkoutContact?.whatsapp ?? '',
@@ -38,6 +35,61 @@ export default function Checkout() {
     deliveryType: 'home',
     payment: 'card',
   });
+
+  // Dynamic delivery fee based on zone and pickup choice
+  const calculateDelivery = () => {
+    if (form.deliveryType === 'pickup') return 0;
+    const st = form.state.toLowerCase();
+    if (st === 'lagos' || st === 'fct') return total >= 80000 ? 0 : 5000;
+    if (st === 'akwa ibom') return total >= 50000 ? 0 : 1500;
+    if (st === 'rivers') return total >= 60000 ? 0 : 4000;
+    return total >= 50000 ? 0 : 3500;
+  };
+
+  const delivery = calculateDelivery();
+
+  // Coupon / Promo Code State
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; type: 'percentage' | 'fixed'; value: number } | null>(null);
+  const [promoError, setPromoError] = useState('');
+
+  const PROMO_CODES: Record<string, { type: 'percentage' | 'fixed'; value: number; min: number }> = {
+    WELCOME10: { type: 'percentage', value: 10, min: 20000 },
+    NEWYEAR5K: { type: 'fixed', value: 5000, min: 30000 },
+    FLASH20: { type: 'percentage', value: 20, min: 0 },
+    RAWSTITCHES: { type: 'percentage', value: 15, min: 25000 },
+  };
+
+  function applyPromo() {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    const found = PROMO_CODES[code];
+    if (!found) {
+      setPromoError('Invalid coupon code');
+      return;
+    }
+    if (total < found.min) {
+      setPromoError(`Minimum order for this code is ${formatPrice(found.min)}`);
+      return;
+    }
+    setAppliedPromo({ code, type: found.type, value: found.value });
+    setPromoError('');
+  }
+
+  function removePromo() {
+    setAppliedPromo(null);
+    setPromoCode('');
+    setPromoError('');
+  }
+
+  const discountAmount = appliedPromo
+    ? appliedPromo.type === 'percentage'
+      ? Math.round((total * appliedPromo.value) / 100)
+      : appliedPromo.value
+    : 0;
+
+  const grandTotal = Math.max(0, total - discountAmount + delivery);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [orderSummaryOpen, setOrderSummaryOpen] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -106,7 +158,7 @@ export default function Checkout() {
         })),
         subtotal: total,
         deliveryFee: delivery,
-        discount: 0,
+        discount: discountAmount,
         total: grandTotal,
         paymentStatus: status,
         paymentMethod: form.payment === 'card' ? 'Card' : form.payment === 'bank' ? 'Bank Transfer' : 'USSD',
@@ -386,10 +438,61 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
+              <div className="border-b border-border pb-4 mb-4">
+                {appliedPromo ? (
+                  <div className="flex items-center justify-between bg-ivory p-2.5 text-xs font-sans">
+                    <div>
+                      <span className="font-mono font-medium text-charcoal">{appliedPromo.code}</span>
+                      <span className="text-success ml-2">
+                        {appliedPromo.type === 'percentage' ? `(${appliedPromo.value}% off)` : `(₦${appliedPromo.value.toLocaleString()} off)`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={removePromo}
+                      className="text-stone hover:text-error text-xs uppercase tracking-wider transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Discount code"
+                        value={promoCode}
+                        onChange={e => {
+                          setPromoCode(e.target.value);
+                          if (promoError) setPromoError('');
+                        }}
+                        className="flex-1 text-xs border border-border px-3 py-2 uppercase placeholder:normal-case font-mono focus:border-gold focus:outline-none bg-white"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={applyPromo}
+                        disabled={!promoCode.trim()}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    {promoError && (
+                      <p className="text-[11px] text-error mt-1.5 font-sans">{promoError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2 text-sm font-sans border-b border-border pb-3 mb-3">
                 <div className="flex justify-between text-stone">
                   <span>Subtotal</span><span>{formatPrice(total)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Discount {appliedPromo ? `(${appliedPromo.code})` : ''}</span>
+                    <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-stone">
                   <span>Delivery</span><span className={delivery === 0 ? 'text-success' : ''}>{delivery === 0 ? 'Free' : formatPrice(delivery)}</span>
                 </div>
