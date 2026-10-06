@@ -35,7 +35,7 @@ export default function Home() {
           setFeaturedReviews(data.reviews.slice(0, 3));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const newArrivals = productList.filter(p => p.isNewArrival);
@@ -55,7 +55,7 @@ export default function Home() {
         </div>
         <div className="relative z-10 max-w-screen-xl mx-auto px-6 lg:px-12 pb-20 lg:pb-32 w-full">
           <div className="max-w-2xl">
-            <p className="text-gold text-sm uppercase tracking-[0.25em] mb-5 font-sans">Raw Stitches Nigeria Enterprise</p>
+            <h2 className="text-gold text-sm uppercase tracking-[0.25em] mb-5 font-sans">Raw Stitches Nigeria Enterprise</h2>
             <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-ivory leading-tight mb-6">
               Made for the Woman<br />Who Stands Out
             </h1>
