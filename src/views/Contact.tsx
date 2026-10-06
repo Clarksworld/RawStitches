@@ -5,11 +5,33 @@ import { Button } from '../components/ui';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSent(true);
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send message.');
+      }
+
+      setSent(true);
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong. Please try again or contact us via WhatsApp.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -107,7 +129,16 @@ export default function Contact() {
                   <span className="text-xs uppercase tracking-widest font-medium text-charcoal font-sans">Message</span>
                   <textarea required rows={5} value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="How can we help you?" className="px-4 py-3 border border-border focus:border-gold focus:outline-none text-sm font-sans bg-white resize-none" />
                 </label>
-                <Button type="submit" size="lg" className="w-full">Send Message</Button>
+
+                {error && (
+                  <div className="bg-error/10 border border-error/30 text-error text-xs p-3 font-sans">
+                    {error}
+                  </div>
+                )}
+
+                <Button type="submit" size="lg" loading={submitting} className="w-full">
+                  {submitting ? 'Sending...' : 'Send Message'}
+                </Button>
               </form>
             )}
           </div>

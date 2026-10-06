@@ -123,6 +123,19 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Messages / Contact Submissions ─────────────────────────────────────────
+export const messages = pgTable("messages", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull().default(""),
+  subject: text("subject").notNull().default("General Enquiry"),
+  message: text("message").notNull(),
+  // status: unread | read | replied | archived
+  status: text("status").notNull().default("unread"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ─── Type exports ─────────────────────────────────────────────────────────────
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
@@ -134,3 +147,6 @@ export type Category = typeof categories.$inferSelect;
 export type Collection = typeof collections.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
+
