@@ -53,28 +53,31 @@ export default function Checkout() {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; type: 'percentage' | 'fixed'; value: number } | null>(null);
   const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
 
-  const PROMO_CODES: Record<string, { type: 'percentage' | 'fixed'; value: number; min: number }> = {
-    WELCOME10: { type: 'percentage', value: 10, min: 20000 },
-    NEWYEAR5K: { type: 'fixed', value: 5000, min: 30000 },
-    FLASH20: { type: 'percentage', value: 20, min: 0 },
-    RAWSTITCHES: { type: 'percentage', value: 15, min: 25000 },
-  };
-
-  function applyPromo() {
+  async function applyPromo() {
     const code = promoCode.trim().toUpperCase();
     if (!code) return;
-    const found = PROMO_CODES[code];
-    if (!found) {
-      setPromoError('Invalid coupon code');
-      return;
-    }
-    if (total < found.min) {
-      setPromoError(`Minimum order for this code is ${formatPrice(found.min)}`);
-      return;
-    }
-    setAppliedPromo({ code, type: found.type, value: found.value });
+    setPromoLoading(true);
     setPromoError('');
+    try {
+      const res = await fetch('/api/discounts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, orderTotal: total }),
+      });
+      const data = await res.json();
+      if (!data.valid) {
+        setPromoError(data.error || 'Invalid coupon code');
+      } else {
+        setAppliedPromo({ code: data.code, type: data.type, value: data.value });
+        setPromoError('');
+      }
+    } catch {
+      setPromoError('Could not validate code. Please try again.');
+    } finally {
+      setPromoLoading(false);
+    }
   }
 
   function removePromo() {
@@ -490,9 +493,9 @@ export default function Checkout() {
                         size="sm"
                         variant="secondary"
                         onClick={applyPromo}
-                        disabled={!promoCode.trim()}
+                        disabled={!promoCode.trim() || promoLoading}
                       >
-                        Apply
+                        {promoLoading ? 'Checking...' : 'Apply'}
                       </Button>
                     </div>
                     {promoError && (
