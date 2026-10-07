@@ -146,6 +146,32 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Discounts ───────────────────────────────────────────────────────────────
+export const discounts = pgTable("discounts", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  type: text("type").notNull().default("percentage"), // 'percentage' | 'fixed'
+  value: integer("value").notNull().default(0),
+  minOrder: integer("min_order").notNull().default(0),
+  maxUses: integer("max_uses"),
+  uses: integer("uses").notNull().default(0),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
+  status: text("status").notNull().default("active"), // 'active' | 'scheduled' | 'expired'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Delivery Zones ───────────────────────────────────────────────────────────
+export const deliveryZones = pgTable("delivery_zones", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  fee: integer("fee").notNull().default(0),
+  freeThreshold: integer("free_threshold").notNull().default(0),
+  time: text("time").notNull().default("3-5 business days"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ─── Messages / Contact Submissions ─────────────────────────────────────────
 export const messages = pgTable("messages", {
   id: text("id").primaryKey(),
@@ -172,4 +198,8 @@ export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type Discount = typeof discounts.$inferSelect;
+export type NewDiscount = typeof discounts.$inferInsert;
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type NewDeliveryZone = typeof deliveryZones.$inferInsert;
 
