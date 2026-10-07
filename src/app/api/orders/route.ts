@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getDb, orders as ordersTable } from "@/db";
+import { getDb, orders as ordersTable, customers as customersTable } from "@/db";
 import { ORDERS } from "@/data";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,45 @@ export async function POST(request: NextRequest) {
     };
 
     await db.insert(ordersTable).values(newOrder as any);
+
+    // Automatically sync / upsert customer in the customers table
+    if (body.customer?.email) {
+      try {
+        const customerEmail = String(body.customer.email).trim().toLowerCase();
+        const existing = await db
+          .select()
+          .from(customersTable)
+          .where(eq(customersTable.email, customerEmail))
+          .limit(1);
+
+        if (existing.length > 0) {
+          const current = existing[0];
+          await db
+            .update(customersTable)
+            .set({
+              orders: (current.orders || 0) + 1,
+              spent: (current.spent || 0) + (newOrder.total || 0),
+              lastOrder: newOrder.date,
+              phone: body.customer.phone || current.phone || "",
+              name: current.name && current.name !== customerEmail.split("@")[0] ? current.name : (body.customer.name || current.name),
+            })
+            .where(eq(customersTable.email, customerEmail));
+        } else {
+          await db.insert(customersTable).values({
+            id: `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            name: body.customer.name || customerEmail.split("@")[0],
+            email: customerEmail,
+            phone: body.customer.phone || "",
+            orders: 1,
+            spent: newOrder.total || 0,
+            lastOrder: newOrder.date,
+            status: "active",
+          });
+        }
+      } catch (custErr) {
+        console.error("Auto customer upsert error on order placement:", custErr);
+      }
+    }
 
     return NextResponse.json({ success: true, order: newOrder }, { status: 201 });
   } catch (error: any) {

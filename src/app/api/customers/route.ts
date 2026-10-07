@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb, customers as customersTable } from "@/db";
 import { CUSTOMERS } from "@/data";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -30,10 +30,37 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const db = getDb();
 
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!email) {
+      return NextResponse.json({ success: false, error: "Email is required" }, { status: 400 });
+    }
+
+    // Check if customer already exists
+    const existing = await db
+      .select()
+      .from(customersTable)
+      .where(eq(customersTable.email, email))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const current = existing[0];
+      const updates: Record<string, any> = {};
+      if (body.name && (!current.name || current.name === email.split("@")[0])) {
+        updates.name = body.name;
+      }
+      if (body.phone && !current.phone) {
+        updates.phone = body.phone;
+      }
+      if (Object.keys(updates).length > 0) {
+        await db.update(customersTable).set(updates).where(eq(customersTable.id, current.id));
+      }
+      return NextResponse.json({ success: true, customer: { ...current, ...updates } }, { status: 200 });
+    }
+
     const newCustomer = {
-      id: body.id || `c_${Date.now()}`,
-      name: body.name,
-      email: body.email,
+      id: body.id || `c_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      name: body.name || email.split("@")[0],
+      email,
       phone: body.phone || "",
       orders: 0,
       spent: 0,

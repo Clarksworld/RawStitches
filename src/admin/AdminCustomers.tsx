@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { CUSTOMERS, ORDERS, formatPrice } from '../data';
 import type { Order } from '../data';
 import type { Customer } from '../db/schema';
-import { SearchInput, Badge, Tabs } from '../components/ui';
+import { SearchInput, Badge, Tabs, Button } from '../components/ui';
+import { downloadCSV } from '../lib/csv';
 
 type CustomerData = {
   id: string;
@@ -53,6 +54,14 @@ export default function AdminCustomers() {
 
   const customer = selected ? customers.find(c => c.id === selected) : null;
   const customerOrders = customer ? orders.filter(o => o.customer.email === customer.email) : [];
+
+  const handleExportCSV = () => {
+    downloadCSV(
+      'raw_stitches_customers.csv',
+      ['Customer ID', 'Full Name', 'Email', 'Phone', 'Orders Count', 'Total Spent (NGN)', 'Last Order Date', 'Status'],
+      filtered.map(c => [c.id, c.name, c.email, c.phone, c.orders, c.spent, c.lastOrder || 'N/A', c.status])
+    );
+  };
 
   if (loading) {
     return (
@@ -120,8 +129,11 @@ export default function AdminCustomers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-charcoal">Customers</h1>
-        <span className="text-xs text-stone font-sans">{customers.length} total</span>
+        <div>
+          <h1 className="font-serif text-2xl text-charcoal">Customers</h1>
+          <span className="text-xs text-stone font-sans">{customers.length} total customer accounts</span>
+        </div>
+        <Button variant="ghost" size="sm" onClick={handleExportCSV}>Export CSV</Button>
       </div>
       <div className="bg-white border border-border p-4">
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email..." className="w-72" />
