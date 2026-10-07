@@ -21,7 +21,7 @@ export default function Home() {
     eyebrow: 'Raw Stitches Nigeria Enterprise',
     headline: 'Made for the Woman\nWho Stands Out',
     sub: "Unique, elegant and beautifully crafted women's clothing made in Nigeria.",
-    image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1800&h=1200&fit=crop&auto=format&q=80',
+    image: 'https://res.cloudinary.com/bisnlyad/image/upload/v1791387009/copy_of_whatsapp_image_2026-10-07_at_161833.jpg',
     primaryCta: 'Shop the Collection',
     primaryLink: '/shop',
     secondaryCta: 'Explore New Arrivals',
@@ -32,7 +32,7 @@ export default function Home() {
     try {
       const savedHero = localStorage.getItem('rs_hero_content');
       if (savedHero) setHero(JSON.parse(savedHero));
-    } catch {}
+    } catch { }
 
     fetch('/api/products')
       .then(res => res.json())

@@ -7,20 +7,45 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get("email")?.trim().toLowerCase();
+    const phone = searchParams.get("phone")?.trim();
+
     const db = getDb();
     const rows = await db
       .select()
       .from(ordersTable)
       .orderBy(desc(ordersTable.createdAt));
+
+    let filtered = rows;
+    if (email) {
+      filtered = filtered.filter(
+        (o) => o.customer?.email?.toLowerCase() === email
+      );
+    } else if (phone) {
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+      filtered = filtered.filter((o) => {
+        const p = (o.customer?.phone || "").replace(/[^0-9]/g, "");
+        return p && (p.includes(cleanPhone) || cleanPhone.includes(p));
+      });
+    }
+
     return NextResponse.json({
-      count: rows.length,
-      orders: rows,
+      count: filtered.length,
+      orders: filtered,
     });
   } catch (error) {
     console.error("Failed to query orders from DB, fallback to static:", error);
-    const sorted = [...ORDERS].sort(
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get("email")?.trim().toLowerCase();
+    let sorted = [...ORDERS].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+    if (email) {
+      sorted = sorted.filter(
+        (o) => o.customer?.email?.toLowerCase() === email
+      );
+    }
     return NextResponse.json({
       count: sorted.length,
       orders: sorted,

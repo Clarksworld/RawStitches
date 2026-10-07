@@ -39,7 +39,7 @@ export default function AdminLogin() {
       {/* Image panel */}
       <div className="hidden lg:block flex-1 relative overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1200&h=1600&fit=crop&auto=format&q=80"
+          src="https://res.cloudinary.com/bisnlyad/image/upload/v1791386596/WhatsApp_Image_2026-10-07_at_16.18.33.jpg"
           alt="Raw Stitches"
           className="w-full h-full object-cover opacity-60"
         />
