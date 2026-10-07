@@ -172,6 +172,7 @@ export default function Checkout() {
           country: form.country,
         },
         note: form.note || (form.whatsapp ? `WhatsApp: ${form.whatsapp}` : ''),
+        whatsapp: form.whatsapp || '',
       };
 
       await fetch('/api/orders', {

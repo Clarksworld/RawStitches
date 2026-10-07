@@ -42,10 +42,33 @@ export const customers = pgTable("customers", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone").notNull().default(""),
+  whatsapp: text("whatsapp").notNull().default(""),
   orders: integer("orders").notNull().default(0),
   spent: integer("spent").notNull().default(0),
   lastOrder: text("last_order"),
   status: text("status").notNull().default("active"),
+  notes: text("notes").notNull().default(""),
+  addresses: jsonb("addresses")
+    .$type<
+      Array<{
+        line1: string;
+        city: string;
+        state: string;
+        country: string;
+        isDefault?: boolean;
+      }>
+    >()
+    .default([]),
+  measurements: jsonb("measurements")
+    .$type<{
+      bust?: string;
+      waist?: string;
+      hips?: string;
+      height?: string;
+      preferredSize?: string;
+      customNotes?: string;
+    }>()
+    .default({}),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

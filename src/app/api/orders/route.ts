@@ -51,6 +51,14 @@ export async function POST(request: NextRequest) {
     if (body.customer?.email) {
       try {
         const customerEmail = String(body.customer.email).trim().toLowerCase();
+        const orderAddr = body.address && body.address.line1 ? {
+          line1: String(body.address.line1),
+          city: String(body.address.city || ""),
+          state: String(body.address.state || ""),
+          country: String(body.address.country || "Nigeria"),
+          isDefault: true,
+        } : null;
+
         const existing = await db
           .select()
           .from(customersTable)
@@ -59,6 +67,12 @@ export async function POST(request: NextRequest) {
 
         if (existing.length > 0) {
           const current = existing[0];
+          const existingAddrs = Array.isArray(current.addresses) ? current.addresses : [];
+          const addressAlreadyExists = orderAddr && existingAddrs.some(
+            (a: any) => a && a.line1 && a.line1.toLowerCase() === orderAddr.line1.toLowerCase()
+          );
+          const updatedAddresses = orderAddr && !addressAlreadyExists ? [orderAddr, ...existingAddrs] : existingAddrs;
+
           await db
             .update(customersTable)
             .set({
@@ -66,7 +80,9 @@ export async function POST(request: NextRequest) {
               spent: (current.spent || 0) + (newOrder.total || 0),
               lastOrder: newOrder.date,
               phone: body.customer.phone || current.phone || "",
+              whatsapp: body.whatsapp || current.whatsapp || "",
               name: current.name && current.name !== customerEmail.split("@")[0] ? current.name : (body.customer.name || current.name),
+              addresses: updatedAddresses as any,
             })
             .where(eq(customersTable.email, customerEmail));
         } else {
@@ -75,10 +91,13 @@ export async function POST(request: NextRequest) {
             name: body.customer.name || customerEmail.split("@")[0],
             email: customerEmail,
             phone: body.customer.phone || "",
+            whatsapp: body.whatsapp || "",
             orders: 1,
             spent: newOrder.total || 0,
             lastOrder: newOrder.date,
             status: "active",
+            addresses: orderAddr ? [orderAddr] : ([] as any),
+            notes: body.note ? `Checkout Note: ${body.note}` : "",
           });
         }
       } catch (custErr) {
