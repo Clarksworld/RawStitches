@@ -1,23 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb, orders as ordersTable, customers as customersTable } from "@/db";
 import { ORDERS } from "@/data";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
     const db = getDb();
-    const rows = await db.select().from(ordersTable);
+    const rows = await db
+      .select()
+      .from(ordersTable)
+      .orderBy(desc(ordersTable.createdAt));
     return NextResponse.json({
       count: rows.length,
       orders: rows,
     });
   } catch (error) {
     console.error("Failed to query orders from DB, fallback to static:", error);
+    const sorted = [...ORDERS].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
     return NextResponse.json({
-      count: ORDERS.length,
-      orders: ORDERS,
+      count: sorted.length,
+      orders: sorted,
     });
   }
 }
