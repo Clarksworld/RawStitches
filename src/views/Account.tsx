@@ -36,13 +36,10 @@ export default function Account() {
       if (!state.customerUser?.email) return
       setLoadingOrders(true)
       try {
-        const res = await fetch("/api/orders")
+        const res = await fetch(`/api/orders?email=${encodeURIComponent(state.customerUser.email)}`)
         const data = await res.json()
         if (data.orders && Array.isArray(data.orders)) {
-          const userOrders = data.orders.filter(
-            (o: Order) => o.customer?.email?.toLowerCase() === state.customerUser?.email?.toLowerCase()
-          )
-          setOrders(userOrders)
+          setOrders(data.orders)
         }
       } catch (err) {
         console.error("Failed to load customer orders:", err)
@@ -57,6 +54,7 @@ export default function Account() {
     try {
       await authClient.signOut()
     } catch {}
+    dispatch({ type: "SET_CUSTOMER_USER", user: null })
     dispatch({ type: "END_CUSTOMER_PREVIEW" })
     dispatch({
       type: "ADD_TOAST",

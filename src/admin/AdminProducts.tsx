@@ -57,6 +57,49 @@ export default function AdminProducts() {
     setSelected(prev => prev.length === paged.length ? [] : paged.map(p => p.id));
   }
 
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  async function handleBulkAction(action: 'publish' | 'unpublish' | 'archive' | 'delete') {
+    if (selected.length === 0) return;
+    if (action === 'delete') {
+      if (!window.confirm(`Are you sure you want to delete ${selected.length} selected product(s)? This cannot be undone.`)) return;
+      setBulkLoading(true);
+      try {
+        await Promise.all(selected.map(id => fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: 'DELETE' })));
+        setProducts(prev => prev.filter(p => !selected.includes(p.id)));
+        setSelected([]);
+      } catch (err) {
+        console.error('Failed to bulk delete products:', err);
+      } finally {
+        setBulkLoading(false);
+      }
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      await Promise.all(
+        selected.map(id => {
+          const patchBody =
+            action === 'publish' ? { isFeatured: true } :
+            action === 'unpublish' ? { isFeatured: false } :
+            { stock: 0 };
+          return fetch(`/api/products/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchBody),
+          });
+        })
+      );
+      await loadProducts();
+      setSelected([]);
+    } catch (err) {
+      console.error('Bulk action error:', err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
   const stockBadge = (p: Product) => {
     if (p.stock === 0) return <Badge variant="error">Out of Stock</Badge>;
     if (p.stock <= p.lowStockThreshold) return <Badge variant="warning">Low Stock</Badge>;
@@ -76,10 +119,18 @@ export default function AdminProducts() {
         {selected.length > 0 && (
           <div className="flex items-center gap-2 ml-auto flex-wrap">
             <span className="text-xs text-stone font-sans">{selected.length} selected</span>
-            <Button variant="ghost" size="sm">Publish</Button>
-            <Button variant="ghost" size="sm">Unpublish</Button>
-            <Button variant="ghost" size="sm">Archive</Button>
-            <Button variant="danger" size="sm">Delete</Button>
+            <Button variant="ghost" size="sm" disabled={bulkLoading} onClick={() => handleBulkAction('publish')}>
+              Publish
+            </Button>
+            <Button variant="ghost" size="sm" disabled={bulkLoading} onClick={() => handleBulkAction('unpublish')}>
+              Unpublish
+            </Button>
+            <Button variant="ghost" size="sm" disabled={bulkLoading} onClick={() => handleBulkAction('archive')}>
+              Archive
+            </Button>
+            <Button variant="danger" size="sm" disabled={bulkLoading} onClick={() => handleBulkAction('delete')}>
+              Delete
+            </Button>
           </div>
         )}
         <span className="text-xs text-stone font-sans ml-auto">{filtered.length} products</span>

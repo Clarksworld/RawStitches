@@ -25,7 +25,26 @@ export default function AdminSettings() {
   const [paystackSecret, setPaystackSecret] = useState('');
   const [flutterwaveKey, setFlutterwaveKey] = useState('');
 
-  // Load saved gateway settings on mount
+  const [business, setBusiness] = useState({
+    name: 'Raw Stitches Nigeria Enterprise',
+    email: 'info@rawstitches.ng',
+    phone: '0803 689 5862',
+    whatsapp: '+234 803 689 5862',
+    street: 'No. 62 Enwe Street',
+    city: 'Uyo',
+    state: 'Akwa Ibom',
+    country: 'Nigeria',
+    instagram: 'https://www.instagram.com/rawstitches_',
+    tiktok: 'https://www.tiktok.com/@rawstitches1',
+    facebook: 'https://www.facebook.com/rawstitchesnigeria',
+  });
+
+  const [notificationEmail, setNotificationEmail] = useState('admin@rawstitches.ng');
+  const [savingBusiness, setSavingBusiness] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+  const [savedFeedback, setSavedFeedback] = useState<string | null>(null);
+
+  // Load saved gateway settings and business info on mount
   useEffect(() => {
     try {
       const pKey = localStorage.getItem('rs_paystack_public_key');
@@ -38,14 +57,106 @@ export default function AdminSettings() {
         setFlutterwaveKey(fKey);
         setFlutterwaveConnected(true);
       }
+      const savedBrand = localStorage.getItem('rs_brand_story');
+      if (savedBrand) {
+        const parsed = JSON.parse(savedBrand);
+        setBusiness(prev => ({
+          ...prev,
+          name: parsed.name || prev.name,
+          email: parsed.email || prev.email,
+          phone: parsed.phone || prev.phone,
+          whatsapp: parsed.whatsapp || prev.whatsapp,
+        }));
+      }
     } catch {}
+
+    // Load from DB
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(data => {
+        if (data.brand) {
+          const b = data.brand;
+          const parts = (b.address || '').split(',').map((s: string) => s.trim());
+          setBusiness(prev => ({
+            ...prev,
+            name: b.name || prev.name,
+            email: b.email || prev.email,
+            phone: b.phone || prev.phone,
+            whatsapp: b.whatsapp || prev.whatsapp,
+            street: parts[0] || prev.street,
+            city: parts[1] || prev.city,
+            state: parts[2] || prev.state,
+            country: parts[3] || prev.country,
+            instagram: b.instagram?.startsWith('http') ? b.instagram : `https://www.instagram.com/${b.instagram?.replace(/^@/, '') || 'rawstitches_'}`,
+            tiktok: b.tiktok?.startsWith('http') ? b.tiktok : `https://www.tiktok.com/@${b.tiktok?.replace(/^@/, '') || 'rawstitches1'}`,
+            facebook: b.facebook || prev.facebook,
+          }));
+        }
+        if (data.notification_settings?.email) {
+          setNotificationEmail(data.notification_settings.email);
+        }
+      })
+      .catch(() => {});
   }, []);
 
+  async function handleSaveBusiness() {
+    setSavingBusiness(true);
+    try {
+      const address = `${business.street}, ${business.city}, ${business.state}, ${business.country}`;
+      const instaPart = business.instagram.split('/').filter(Boolean).pop()?.replace(/^@/, '') || 'rawstitches_';
+      const tiktokPart = business.tiktok.split('/').filter(Boolean).pop()?.replace(/^@/, '') || 'rawstitches1';
+
+      const brandPayload = {
+        name: business.name,
+        email: business.email,
+        phone: business.phone,
+        whatsapp: business.whatsapp,
+        address,
+        instagram: `@${instaPart}`,
+        tiktok: `@${tiktokPart}`,
+        facebook: business.facebook,
+      };
+
+      await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'brand', value: brandPayload }),
+      });
+      localStorage.setItem('rs_brand_story', JSON.stringify(brandPayload));
+
+      setSavedFeedback('Business settings saved to database and synced across the store!');
+      setTimeout(() => setSavedFeedback(null), 3500);
+    } catch (err) {
+      console.error('Failed to save business settings:', err);
+    } finally {
+      setSavingBusiness(false);
+    }
+  }
+
+  async function handleSaveNotifications() {
+    setSavingNotifications(true);
+    try {
+      await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'notification_settings', value: { email: notificationEmail } }),
+      });
+      setSavedFeedback('Notification preferences saved to database successfully!');
+      setTimeout(() => setSavedFeedback(null), 3500);
+    } catch (err) {
+      console.error('Failed to save notification settings:', err);
+    } finally {
+      setSavingNotifications(false);
+    }
+  }
+
   function handleSaveGateway() {
+    const paySettings: Record<string, string> = {};
     if (gatewayModal === 'Paystack') {
       if (paystackKey.trim()) {
         localStorage.setItem('rs_paystack_public_key', paystackKey.trim());
         setPaystackConnected(true);
+        paySettings.paystackKey = paystackKey.trim();
       } else {
         localStorage.removeItem('rs_paystack_public_key');
         setPaystackConnected(false);
@@ -54,17 +165,34 @@ export default function AdminSettings() {
       if (flutterwaveKey.trim()) {
         localStorage.setItem('rs_flutterwave_public_key', flutterwaveKey.trim());
         setFlutterwaveConnected(true);
+        paySettings.flutterwaveKey = flutterwaveKey.trim();
       } else {
         localStorage.removeItem('rs_flutterwave_public_key');
         setFlutterwaveConnected(false);
       }
     }
+
+    fetch('/api/content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'payment_settings', value: paySettings }),
+    }).catch(() => {});
+
     setGatewayModal(null);
+    setSavedFeedback('Payment gateway configuration saved!');
+    setTimeout(() => setSavedFeedback(null), 3000);
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-2xl text-charcoal">Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl text-charcoal">Settings</h1>
+        {savedFeedback && (
+          <span className="text-xs bg-success/15 border border-success/30 text-success px-3 py-1 font-sans animate-fade-in">
+            ✓ {savedFeedback}
+          </span>
+        )}
+      </div>
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
 
@@ -75,26 +203,75 @@ export default function AdminSettings() {
           <div className="space-y-6">
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Business Information</h3>
-              <Input label="Business Name" defaultValue="Raw Stitches Nigeria Enterprise" />
-              <Input label="Email Address" type="email" defaultValue="info@rawstitches.ng" />
-              <Input label="Phone Number" defaultValue="0803 689 5862" />
-              <Input label="WhatsApp" defaultValue="+234 803 689 5862" />
+              <Input
+                label="Business Name"
+                value={business.name}
+                onChange={e => setBusiness(b => ({ ...b, name: e.target.value }))}
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                value={business.email}
+                onChange={e => setBusiness(b => ({ ...b, email: e.target.value }))}
+              />
+              <Input
+                label="Phone Number"
+                value={business.phone}
+                onChange={e => setBusiness(b => ({ ...b, phone: e.target.value }))}
+              />
+              <Input
+                label="WhatsApp"
+                value={business.whatsapp}
+                onChange={e => setBusiness(b => ({ ...b, whatsapp: e.target.value }))}
+              />
             </div>
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Address</h3>
-              <Input label="Street Address" defaultValue="No. 62 Enwe Street" />
+              <Input
+                label="Street Address"
+                value={business.street}
+                onChange={e => setBusiness(b => ({ ...b, street: e.target.value }))}
+              />
               <div className="grid grid-cols-2 gap-4">
-                <Input label="City" defaultValue="Uyo" />
-                <Input label="State" defaultValue="Akwa Ibom" />
+                <Input
+                  label="City"
+                  value={business.city}
+                  onChange={e => setBusiness(b => ({ ...b, city: e.target.value }))}
+                />
+                <Input
+                  label="State"
+                  value={business.state}
+                  onChange={e => setBusiness(b => ({ ...b, state: e.target.value }))}
+                />
               </div>
-              <Input label="Country" defaultValue="Nigeria" />
+              <Input
+                label="Country"
+                value={business.country}
+                onChange={e => setBusiness(b => ({ ...b, country: e.target.value }))}
+              />
             </div>
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Social Media</h3>
-              <Input label="Instagram Profile URL" defaultValue="https://www.instagram.com/rawstitches_" />
-              <Input label="TikTok Profile URL" defaultValue="https://www.tiktok.com/@rawstitches1" />
-              <Input label="Facebook Page URL" defaultValue="https://www.facebook.com/rawstitchesnigeria" />
-              <Input label="WhatsApp Enquiries" defaultValue="+234 803 689 5862" />
+              <Input
+                label="Instagram Profile URL"
+                value={business.instagram}
+                onChange={e => setBusiness(b => ({ ...b, instagram: e.target.value }))}
+              />
+              <Input
+                label="TikTok Profile URL"
+                value={business.tiktok}
+                onChange={e => setBusiness(b => ({ ...b, tiktok: e.target.value }))}
+              />
+              <Input
+                label="Facebook Page URL"
+                value={business.facebook}
+                onChange={e => setBusiness(b => ({ ...b, facebook: e.target.value }))}
+              />
+              <Input
+                label="WhatsApp Enquiries"
+                value={business.whatsapp}
+                onChange={e => setBusiness(b => ({ ...b, whatsapp: e.target.value }))}
+              />
             </div>
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Currency</h3>
@@ -103,7 +280,9 @@ export default function AdminSettings() {
                 <p className="text-stone text-xs">Nigerian Naira is the default currency.</p>
               </div>
             </div>
-            <Button>Save Business Settings</Button>
+            <Button loading={savingBusiness} onClick={handleSaveBusiness}>
+              {savingBusiness ? 'Saving to Database...' : 'Save Business Settings'}
+            </Button>
           </div>
         )}
 
@@ -183,9 +362,16 @@ export default function AdminSettings() {
               ))}
             </div>
             <div className="border-t border-border pt-4">
-              <Input label="Notification Email" defaultValue="admin@rawstitches.ng" hint="Where to send admin notifications" />
+              <Input
+                label="Notification Email"
+                value={notificationEmail}
+                onChange={e => setNotificationEmail(e.target.value)}
+                hint="Where to send admin notifications"
+              />
             </div>
-            <Button>Save Notification Settings</Button>
+            <Button loading={savingNotifications} onClick={handleSaveNotifications}>
+              {savingNotifications ? 'Saving...' : 'Save Notification Settings'}
+            </Button>
           </div>
         )}
 

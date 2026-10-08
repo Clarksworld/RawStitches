@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from '../components/router-adapter';
 import { PRODUCTS, formatPrice, type Product } from '../data';
 import { Button, Badge, Accordion, StarRating, Breadcrumb, Modal } from '../components/ui';
-import { useCart, useWishlist, useToast } from '../store';
+import { useCart, useWishlist, useToast, useStore } from '../store';
 import ProductCard from '../components/ProductCard';
 import { SIZE_CHART } from './SizeGuide';
 
@@ -36,13 +36,30 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps = {
   const [sizeError, setSizeError] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
+  const { state } = useStore();
+
   // Reviews state
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [reviewForm, setReviewForm] = useState({ name: '', email: '', rating: 0, body: '' });
+  const [reviewForm, setReviewForm] = useState({
+    name: state.customerUser?.name ?? '',
+    email: state.customerUser?.email ?? '',
+    rating: 0,
+    body: '',
+  });
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [reviewError, setReviewError] = useState('');
+
+  useEffect(() => {
+    if (state.customerUser) {
+      setReviewForm(f => ({
+        ...f,
+        name: f.name || state.customerUser?.name || '',
+        email: f.email || state.customerUser?.email || '',
+      }));
+    }
+  }, [state.customerUser]);
 
   useEffect(() => {
     if (!product) return;
@@ -413,6 +430,13 @@ export default function ProductDetail({ initialProduct }: ProductDetailProps = {
                     })}
                   </div>
                 </div>
+
+                {state.customerUser && (
+                  <div className="flex items-center gap-2 text-xs text-stone font-sans bg-ivory-dark/40 p-2.5 border border-border">
+                    <span className="w-2 h-2 rounded-full bg-success inline-block"></span>
+                    <span>Reviewing as <strong>{state.customerUser.name}</strong> — Verified Customer</span>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs uppercase tracking-widest font-medium text-charcoal font-sans block mb-1">Your Name</label>

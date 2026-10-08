@@ -53,6 +53,7 @@ export type Action =
   | { type: 'SET_CUSTOMER_USER'; user: CustomerUser | null }
   | { type: 'SET_CHECKOUT_CONTACT'; contact: CheckoutContact }
   | { type: 'RESTORE_WISHLIST'; wishlist: string[] }
+  | { type: 'RESTORE_SESSION'; user: CustomerUser }
   | { type: 'ADMIN_LOGIN' }
   | { type: 'ADMIN_LOGOUT' };
 
@@ -110,6 +111,18 @@ function reducer(state: State, action: Action): State {
       };
     case 'SET_CHECKOUT_CONTACT':
       return { ...state, checkoutContact: action.contact };
+    case 'RESTORE_SESSION':
+      return {
+        ...state,
+        customerUser: action.user,
+        customerPreview: true,
+        checkoutContact: state.checkoutContact || {
+          name: action.user.name,
+          email: action.user.email,
+          phone: '',
+          whatsapp: '',
+        },
+      };
     case 'ADMIN_LOGIN':
       return { ...state, adminAuthed: true };
     case 'ADMIN_LOGOUT':
@@ -120,12 +133,14 @@ function reducer(state: State, action: Action): State {
 }
 
 const WISHLIST_KEY = 'raw-stitches-guest-wishlist';
+const SESSION_KEY = 'rs-customer-session';
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initial);
   const isHydrated = useRef(false);
 
   useEffect(() => {
+    // Restore wishlist
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(WISHLIST_KEY) ?? '[]');
       const wishlist = Array.isArray(saved) ? [...new Set(saved.filter((id): id is string => typeof id === 'string'))] : [];
@@ -135,9 +150,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch {
       // Storage unavailable or invalid
     }
+
+    // Restore customer session
+    try {
+      const savedSession = localStorage.getItem(SESSION_KEY);
+      if (savedSession) {
+        const user: CustomerUser = JSON.parse(savedSession);
+        if (user?.id && user?.email) {
+          dispatch({ type: 'RESTORE_SESSION', user });
+        }
+      }
+    } catch {
+      // Ignore invalid session data
+    }
+
     isHydrated.current = true;
   }, []);
 
+  // Persist wishlist to localStorage on every change
   useEffect(() => {
     if (!isHydrated.current) return;
     try {
@@ -146,6 +176,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Shopping still works when browser storage is unavailable.
     }
   }, [state.wishlist]);
+
+  // Persist customer session to localStorage on every change
+  useEffect(() => {
+    if (!isHydrated.current) return;
+    try {
+      if (state.customerUser) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(state.customerUser));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [state.customerUser]);
 
   return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>;
 }

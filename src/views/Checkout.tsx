@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from '../components/router-adapter';
 import { useCart, useStore } from '../store';
 import { formatPrice } from '../data';
 import { Button, Input, Select } from '../components/ui';
 import StudioMap from '../components/StudioMap';
 const logo = '/raw-stitches-logo.png';
+
+type DeliveryZone = {
+  id: string;
+  name: string;
+  fee: number;
+  freeThreshold: number;
+  time: string;
+  active: boolean;
+};
 
 const STEPS = ['Information', 'Delivery', 'Payment'];
 const NIGERIAN_STATES = [
@@ -28,6 +37,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [processing, setProcessing] = useState(false);
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
 
   const [form, setForm] = useState({
     name: state.checkoutContact?.name ?? '', email: state.checkoutContact?.email ?? '',
@@ -37,13 +47,38 @@ export default function Checkout() {
     payment: 'card',
   });
 
-  // Dynamic delivery fee based on zone and pickup choice
+  // Load delivery zones from DB on mount
+  useEffect(() => {
+    fetch('/api/delivery')
+      .then(res => res.json())
+      .then(data => {
+        if (data.zones && Array.isArray(data.zones)) {
+          setDeliveryZones(data.zones.filter((z: DeliveryZone) => z.active));
+        }
+      })
+      .catch(() => {}); // falls back to local calculation
+  }, []);
+
+  // Dynamic delivery fee — matches selected state to a DB zone, with local fallbacks
   const calculateDelivery = () => {
     if (form.deliveryType === 'pickup') return 0;
-    const st = form.state.toLowerCase();
-    if (st === 'lagos' || st === 'fct') return total >= 80000 ? 0 : 5000;
-    if (st === 'akwa ibom') return total >= 50000 ? 0 : 1500;
-    if (st === 'rivers') return total >= 60000 ? 0 : 4000;
+    const selectedState = form.state.toLowerCase().trim();
+    if (!selectedState) return 0;
+
+    if (deliveryZones.length > 0) {
+      const matched = deliveryZones.find(z =>
+        z.name.toLowerCase().split(',').some(part => selectedState.includes(part.trim()) || part.trim().includes(selectedState))
+      );
+      if (matched) return total >= matched.freeThreshold ? 0 : matched.fee;
+      // Use the last zone as a catch-all (typically "Rest of Nigeria")
+      const fallbackZone = deliveryZones[deliveryZones.length - 1];
+      return total >= fallbackZone.freeThreshold ? 0 : fallbackZone.fee;
+    }
+
+    // Hard-coded fallback while zones load
+    if (selectedState === 'lagos' || selectedState === 'fct') return total >= 80000 ? 0 : 5000;
+    if (selectedState === 'akwa ibom') return total >= 50000 ? 0 : 1500;
+    if (selectedState === 'rivers') return total >= 60000 ? 0 : 4000;
     return total >= 50000 ? 0 : 3500;
   };
 
@@ -183,6 +218,17 @@ export default function Checkout() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
       });
+
+      // Auto-send confirmation email + WhatsApp link to customer
+      fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber: orderNum,
+          newStatus: 'confirmed',
+          channel: 'email', // email only at placement; WhatsApp link shown in admin for manual send
+        }),
+      }).catch(() => {}); // fire-and-forget; non-blocking
     } catch (err) {
       console.error('Failed to submit order to API:', err);
     } finally {
