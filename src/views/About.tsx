@@ -123,6 +123,11 @@ export default function About() {
                 <p>Uyo, Akwa Ibom State, Nigeria</p>
                 <a href="tel:08036895862" className="block text-gold hover:underline mt-3">0803 689 5862</a>
                 <a href="https://wa.me/2348036895862" className="block text-gold hover:underline">WhatsApp: +234 803 689 5862</a>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
+                  <a href="https://www.instagram.com/rawstitches_" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Instagram: @rawstitches_</a>
+                  <span className="text-ivory/30">·</span>
+                  <a href="https://www.tiktok.com/@rawstitches1" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">TikTok: @rawstitches1</a>
+                </div>
               </div>
               <div className="mt-6">
                 <Link to="/contact"><Button variant="ghost" className="border-white/20 text-ivory hover:border-gold hover:text-gold">Get in Touch</Button></Link>

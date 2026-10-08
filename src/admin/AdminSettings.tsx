@@ -91,8 +91,10 @@ export default function AdminSettings() {
             </div>
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Social Media</h3>
+              <Input label="Instagram Profile URL" defaultValue="https://www.instagram.com/rawstitches_" />
+              <Input label="TikTok Profile URL" defaultValue="https://www.tiktok.com/@rawstitches1" />
               <Input label="Facebook Page URL" defaultValue="https://www.facebook.com/rawstitchesnigeria" />
-              <Input label="Instagram (optional)" placeholder="https://instagram.com/..." />
+              <Input label="WhatsApp Enquiries" defaultValue="+234 803 689 5862" />
             </div>
             <div className="bg-white border border-border p-5 space-y-4">
               <h3 className="font-sans font-medium text-sm text-charcoal">Currency</h3>

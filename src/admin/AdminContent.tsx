@@ -78,9 +78,10 @@ export default function AdminContent() {
     manifesto: 'Founded in Uyo, Raw Stitches creates contemporary womenswear inspired by African heritage, architectural silhouettes, and fine tailoring.',
     address: 'No. 62 Enwe Street, Uyo, Akwa Ibom State, Nigeria',
     email: 'info@rawstitches.ng',
-    phone: '+234 800 000 0000',
-    whatsapp: '+234 800 000 0000',
-    instagram: '@rawstitches.ng',
+    phone: '+234 803 689 5862',
+    whatsapp: '+234 803 689 5862',
+    instagram: '@rawstitches_',
+    tiktok: '@rawstitches1',
   });
 
   // Load from localStorage on mount
@@ -587,6 +588,17 @@ export default function AdminContent() {
                   value={brandInfo.instagram}
                   onChange={e => setBrandInfo(b => ({ ...b, instagram: e.target.value }))}
                   className="px-4 py-2.5 border border-border focus:border-gold focus:outline-none text-sm font-sans"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-widest font-medium text-charcoal font-sans">
+                  TikTok Handle
+                </span>
+                <input
+                  value={(brandInfo as any).tiktok || ''}
+                  onChange={e => setBrandInfo(b => ({ ...b, tiktok: e.target.value }))}
+                  className="px-4 py-2.5 border border-border focus:border-gold focus:outline-none text-sm font-sans"
+                  placeholder="@rawstitches1"
                 />
               </label>
             </div>
