@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useReducer, useEffect, type ReactNode } from 'react';
+import { useContext, useReducer, useEffect, useRef, type ReactNode } from 'react';
 import type { Product } from './data';
 import { StoreContext } from './store-context';
 
@@ -52,6 +52,7 @@ export type Action =
   | { type: 'END_CUSTOMER_PREVIEW' }
   | { type: 'SET_CUSTOMER_USER'; user: CustomerUser | null }
   | { type: 'SET_CHECKOUT_CONTACT'; contact: CheckoutContact }
+  | { type: 'RESTORE_WISHLIST'; wishlist: string[] }
   | { type: 'ADMIN_LOGIN' }
   | { type: 'ADMIN_LOGOUT' };
 
@@ -67,6 +68,8 @@ const initial: State = {
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case 'RESTORE_WISHLIST':
+      return { ...state, wishlist: action.wishlist };
     case 'ADD_TO_CART': {
       const key = (i: CartItem) => `${i.product.id}-${i.color}-${i.size}`;
       const exists = state.cart.find(i => key(i) === key(action.item));
@@ -118,25 +121,32 @@ function reducer(state: State, action: Action): State {
 
 const WISHLIST_KEY = 'raw-stitches-guest-wishlist';
 
-function restoreGuestWishlist(): State {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(WISHLIST_KEY) ?? '[]');
-    const wishlist = Array.isArray(saved) ? [...new Set(saved.filter((id): id is string => typeof id === 'string'))] : [];
-    return { ...initial, wishlist };
-  } catch {
-    return initial;
-  }
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initial, restoreGuestWishlist);
+  const [state, dispatch] = useReducer(reducer, initial);
+  const isHydrated = useRef(false);
+
   useEffect(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(WISHLIST_KEY) ?? '[]');
+      const wishlist = Array.isArray(saved) ? [...new Set(saved.filter((id): id is string => typeof id === 'string'))] : [];
+      if (wishlist.length > 0) {
+        dispatch({ type: 'RESTORE_WISHLIST', wishlist });
+      }
+    } catch {
+      // Storage unavailable or invalid
+    }
+    isHydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated.current) return;
     try {
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(state.wishlist));
     } catch {
       // Shopping still works when browser storage is unavailable.
     }
   }, [state.wishlist]);
+
   return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>;
 }
 

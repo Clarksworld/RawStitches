@@ -16,6 +16,7 @@ const navLinks = [
 ];
 
 export default function CustomerLayout({ children }: { children?: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -30,6 +31,10 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -107,11 +112,11 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
             </Link>
             <Link to="/account?tab=wishlist" className={`p-1 transition-colors hover:text-gold hidden lg:block relative ${navText}`} aria-label="Wishlist">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-              {ids.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold text-black text-[10px] font-bold rounded-full flex items-center justify-center">{ids.length}</span>}
+              {mounted && ids.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold text-black text-[10px] font-bold rounded-full flex items-center justify-center">{ids.length}</span>}
             </Link>
             <Link to="/cart" className={`p-1 transition-colors hover:text-gold relative ${navText}`} aria-label="Cart">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-              {count > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold text-black text-[10px] font-bold rounded-full flex items-center justify-center">{count}</span>}
+              {mounted && count > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold text-black text-[10px] font-bold rounded-full flex items-center justify-center">{count}</span>}
             </Link>
 
             {/* Mobile hamburger */}
