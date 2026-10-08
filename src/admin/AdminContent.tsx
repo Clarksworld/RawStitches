@@ -24,10 +24,10 @@ const DEFAULT_SECTIONS: SectionItem[] = [
   { id: 'collections', label: 'Shop by Collection', desc: 'Collection cards on homepage', published: true },
   { id: 'about', label: 'Brand Story Section', desc: 'Short brand story on homepage', published: true },
   { id: 'testimonials', label: 'Testimonials', desc: 'Customer reviews shown on homepage', published: true },
-  { id: 'social', label: 'Social Gallery', desc: 'Instagram / Facebook gallery', published: false },
+  { id: 'social', label: 'Social Gallery', desc: 'Instagram / TikTok / Facebook gallery', published: true },
   { id: 'newsletter', label: 'Newsletter / CTA', desc: 'Email signup section', published: true },
   { id: 'about_page', label: 'About Page', desc: 'Full about page content', published: true },
-  { id: 'faq', label: 'FAQ', desc: 'Frequently asked questions', published: false },
+  { id: 'faq', label: 'FAQ', desc: 'Frequently asked questions', published: true },
   { id: 'footer', label: 'Footer Content', desc: 'Footer links, address, and social', published: true },
 ];
 
@@ -84,8 +84,9 @@ export default function AdminContent() {
     tiktok: '@rawstitches1',
   });
 
-  // Load from localStorage on mount
+  // Load from localStorage & fetch from DB API on mount
   useEffect(() => {
+    // 1. Instant optimistic load from localStorage
     try {
       const savedHero = localStorage.getItem('rs_hero_content');
       if (savedHero) setHero(JSON.parse(savedHero));
@@ -102,8 +103,35 @@ export default function AdminContent() {
       const savedBrand = localStorage.getItem('rs_brand_story');
       if (savedBrand) setBrandInfo(JSON.parse(savedBrand));
     } catch (e) {
-      console.error('Failed to load content settings:', e);
+      console.error('Failed to load local content settings:', e);
     }
+
+    // 2. Fetch authoritative database content
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(data => {
+        if (data.hero) {
+          setHero(data.hero);
+          localStorage.setItem('rs_hero_content', JSON.stringify(data.hero));
+        }
+        if (data.announcement) {
+          setAnnouncement(data.announcement);
+          localStorage.setItem('rs_announcement', JSON.stringify(data.announcement));
+        }
+        if (data.sections && Array.isArray(data.sections)) {
+          setSections(data.sections);
+          localStorage.setItem('rs_site_sections', JSON.stringify(data.sections));
+        }
+        if (data.faqs && Array.isArray(data.faqs)) {
+          setFaqs(data.faqs);
+          localStorage.setItem('rs_faqs', JSON.stringify(data.faqs));
+        }
+        if (data.brand) {
+          setBrandInfo(data.brand);
+          localStorage.setItem('rs_brand_story', JSON.stringify(data.brand));
+        }
+      })
+      .catch(err => console.error('Failed to load content from /api/content:', err));
   }, []);
 
   function triggerFeedback(msg: string) {
@@ -111,11 +139,24 @@ export default function AdminContent() {
     setTimeout(() => setSavedFeedback(null), 3000);
   }
 
+  async function syncContentToDb(key: string, value: any) {
+    try {
+      await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value }),
+      });
+    } catch (err) {
+      console.error(`Failed to sync ${key} to /api/content:`, err);
+    }
+  }
+
   // ─── Section Handlers ────────────────────────────────────────────────────────
   function toggleSection(id: string) {
     const updated = sections.map(s => s.id === id ? { ...s, published: !s.published } : s);
     setSections(updated);
     localStorage.setItem('rs_site_sections', JSON.stringify(updated));
+    syncContentToDb('sections', updated);
     triggerFeedback('Section visibility updated');
   }
 
@@ -124,6 +165,7 @@ export default function AdminContent() {
     const updated = sections.map(s => s.id === editingSection.id ? editingSection : s);
     setSections(updated);
     localStorage.setItem('rs_site_sections', JSON.stringify(updated));
+    syncContentToDb('sections', updated);
     setEditingSection(null);
     triggerFeedback('Section details saved');
   }
@@ -131,12 +173,14 @@ export default function AdminContent() {
   // ─── Hero Handlers ───────────────────────────────────────────────────────────
   function handleSaveHero() {
     localStorage.setItem('rs_hero_content', JSON.stringify(hero));
+    syncContentToDb('hero', hero);
     triggerFeedback('Homepage Hero successfully saved');
   }
 
   // ─── Announcement Handlers ───────────────────────────────────────────────────
   function handleSaveAnnouncement() {
     localStorage.setItem('rs_announcement', JSON.stringify(announcement));
+    syncContentToDb('announcement', announcement);
     triggerFeedback('Announcement bar updated');
   }
 
@@ -171,6 +215,7 @@ export default function AdminContent() {
 
     setFaqs(updated);
     localStorage.setItem('rs_faqs', JSON.stringify(updated));
+    syncContentToDb('faqs', updated);
     setFaqModalOpen(false);
     triggerFeedback(editingFaq ? 'FAQ updated successfully' : 'New FAQ added');
   }
@@ -179,6 +224,7 @@ export default function AdminContent() {
     const updated = faqs.map(f => f.id === id ? { ...f, pub: !f.pub } : f);
     setFaqs(updated);
     localStorage.setItem('rs_faqs', JSON.stringify(updated));
+    syncContentToDb('faqs', updated);
     triggerFeedback('FAQ status changed');
   }
 
@@ -187,12 +233,14 @@ export default function AdminContent() {
     const updated = faqs.filter(f => f.id !== id);
     setFaqs(updated);
     localStorage.setItem('rs_faqs', JSON.stringify(updated));
+    syncContentToDb('faqs', updated);
     triggerFeedback('FAQ deleted');
   }
 
   // ─── Brand Info Handlers ─────────────────────────────────────────────────────
   function handleSaveBrandInfo() {
     localStorage.setItem('rs_brand_story', JSON.stringify(brandInfo));
+    syncContentToDb('brand', brandInfo);
     triggerFeedback('Brand & Studio info saved');
   }
 

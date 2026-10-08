@@ -185,6 +185,13 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ─── Site Content (CMS) ──────────────────────────────────────────────────────
+export const siteContent = pgTable("site_content", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // ─── Type exports ─────────────────────────────────────────────────────────────
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
@@ -202,4 +209,7 @@ export type Discount = typeof discounts.$inferSelect;
 export type NewDiscount = typeof discounts.$inferInsert;
 export type DeliveryZone = typeof deliveryZones.$inferSelect;
 export type NewDeliveryZone = typeof deliveryZones.$inferInsert;
+export type SiteContent = typeof siteContent.$inferSelect;
+export type NewSiteContent = typeof siteContent.$inferInsert;
+
 

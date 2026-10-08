@@ -1,10 +1,35 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Link } from '../components/router-adapter';
 import { Button } from '../components/ui';
 import StudioMap from '../components/StudioMap';
 
 export default function About() {
+  const [brand, setBrand] = useState({
+    tagline: 'Refined Nigerian Couture for the Modern Woman',
+    manifesto: 'Founded in Uyo, Raw Stitches creates contemporary womenswear inspired by African heritage, architectural silhouettes, and fine tailoring.',
+    address: 'No. 62 Enwe Street, Uyo, Akwa Ibom State, Nigeria',
+    phone: '+234 803 689 5862',
+    whatsapp: '+234 803 689 5862',
+    instagram: '@rawstitches_',
+    tiktok: '@rawstitches1',
+  });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rs_brand_story');
+      if (saved) setBrand(JSON.parse(saved));
+    } catch {}
+
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(data => {
+        if (data.brand) setBrand(data.brand);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="bg-ivory">
       {/* Hero */}
@@ -26,10 +51,12 @@ export default function About() {
           <div>
             <p className="text-gold text-xs uppercase tracking-widest mb-4 font-sans">Who We Are</p>
             <h2 className="font-serif text-3xl lg:text-4xl text-charcoal mb-6 leading-tight">
-              Raw Stitches Nigeria Enterprise
+              {brand.tagline || 'Raw Stitches Nigeria Enterprise'}
             </h2>
             <div className="space-y-4 text-stone text-sm leading-relaxed font-sans prose-fashion">
-              <p>Raw Stitches Nigeria Enterprise is a Nigerian fashion brand creating unique and beautiful clothing for women. Founded and based in Uyo, Akwa Ibom State, we design and produce clothing that celebrates the modern Nigerian woman — her strength, her elegance, and her individuality.</p>
+              <p>
+                {brand.manifesto || 'Raw Stitches Nigeria Enterprise is a Nigerian fashion brand creating unique and beautiful clothing for women. Founded and based in Uyo, Akwa Ibom State, we design and produce clothing that celebrates the modern Nigerian woman — her strength, her elegance, and her individuality.'}
+              </p>
               <p>Every piece we create is made with intention. We believe that clothing is a language, and that what a woman wears tells a story about who she is and where she is going.</p>
               <p>We are committed to producing fashion that is uniquely Nigerian — rooted in our heritage, crafted with care, and designed for women who stand out.</p>
             </div>
@@ -119,14 +146,21 @@ export default function About() {
               <h2 className="font-serif text-2xl text-ivory mb-4">Visit Our Studio</h2>
               <div className="text-ivory/60 text-sm font-sans space-y-1.5">
                 <p className="text-ivory font-medium">Raw Stitches Nigeria Enterprise</p>
-                <p>No. 62 Enwe Street</p>
-                <p>Uyo, Akwa Ibom State, Nigeria</p>
-                <a href="tel:08036895862" className="block text-gold hover:underline mt-3">0803 689 5862</a>
-                <a href="https://wa.me/2348036895862" className="block text-gold hover:underline">WhatsApp: +234 803 689 5862</a>
+                <p className="whitespace-pre-line">{brand.address || 'No. 62 Enwe Street\nUyo, Akwa Ibom State, Nigeria'}</p>
+                {brand.phone && <a href={`tel:${brand.phone.replace(/\s+/g, '')}`} className="block text-gold hover:underline mt-3">{brand.phone}</a>}
+                {brand.whatsapp && <a href={`https://wa.me/${brand.whatsapp.replace(/[^0-9]/g, '')}`} className="block text-gold hover:underline">WhatsApp: {brand.whatsapp}</a>}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
-                  <a href="https://www.instagram.com/rawstitches_" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Instagram: @rawstitches_</a>
-                  <span className="text-ivory/30">·</span>
-                  <a href="https://www.tiktok.com/@rawstitches1" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">TikTok: @rawstitches1</a>
+                  {brand.instagram && (
+                    <a href="https://www.instagram.com/rawstitches_" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
+                      Instagram: {brand.instagram}
+                    </a>
+                  )}
+                  {brand.instagram && brand.tiktok && <span className="text-ivory/30">·</span>}
+                  {brand.tiktok && (
+                    <a href="https://www.tiktok.com/@rawstitches1" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">
+                      TikTok: {brand.tiktok}
+                    </a>
+                  )}
                 </div>
               </div>
               <div className="mt-6">

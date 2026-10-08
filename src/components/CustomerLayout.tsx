@@ -26,6 +26,7 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
     text: 'Free delivery on orders above ₦50,000 · Made in Nigeria',
     link: '/shop',
   });
+  const [showFooter, setShowFooter] = useState(true);
   const { count } = useCart();
   const { ids } = useWishlist();
   const location = useLocation();
@@ -37,10 +38,35 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // 1. Instant optimistic load from localStorage
     try {
       const saved = localStorage.getItem('rs_announcement');
       if (saved) setAnnouncement(JSON.parse(saved));
+      const savedSections = localStorage.getItem('rs_site_sections');
+      if (savedSections) {
+        const parsed = JSON.parse(savedSections);
+        if (Array.isArray(parsed)) {
+          const footerSection = parsed.find((s: any) => s.id === 'footer');
+          if (footerSection) setShowFooter(footerSection.published !== false);
+        }
+      }
     } catch {}
+
+    // 2. Fetch authoritative content from DB
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(data => {
+        if (data.announcement) {
+          setAnnouncement(data.announcement);
+          localStorage.setItem('rs_announcement', JSON.stringify(data.announcement));
+        }
+        if (data.sections && Array.isArray(data.sections)) {
+          localStorage.setItem('rs_site_sections', JSON.stringify(data.sections));
+          const footerSection = data.sections.find((s: any) => s.id === 'footer');
+          if (footerSection) setShowFooter(footerSection.published !== false);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -181,7 +207,7 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-black text-ivory mt-24">
+      {showFooter && <footer className="bg-black text-ivory mt-24">
         <div className="max-w-screen-xl mx-auto px-6 lg:px-12 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             <div className="md:col-span-2">
@@ -292,7 +318,7 @@ export default function CustomerLayout({ children }: { children?: ReactNode }) {
             <p className="text-xs text-ivory/30 font-sans">Prices in NGN (₦)</p>
           </div>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }
